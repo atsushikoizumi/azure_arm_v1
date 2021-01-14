@@ -1,0 +1,94 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all resources."
+      }
+    },
+    "PublicDNSLabel" : {
+      "type": "SecureString",
+      "metadata": {
+        "description": "Define Public DNS Name"
+      }
+    },
+    "adminUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "Default Admin username"
+      }
+    },
+    "adminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Default Admin password"
+      }
+    }
+  },
+  "variables": {
+    "tags": "[resourceGroup().tags]",
+    "virtualNetwork01": {
+      "Name": "vnet01",
+      "Prefix": "10.1.0.0/16"
+    },
+    "subnet01": {
+      "Name": "subnet01",
+      "Prefix": "10.1.1.0/24"
+    },
+    "subnet02": {
+      "Name": "subnet02",
+      "Prefix": "10.1.2.0/24"
+    },
+    "PublicIP": {
+      "Name": "public01"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "name": "[variables('virtualNetwork01').Name]",
+      "apiVersion": "2020-05-01",
+      "location": "[parameters('location')]",
+      "comments": "This will build a Virtual Network.",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[variables('virtualNetwork01').Prefix]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[variables('subnet01').Name]",
+            "properties": {
+              "addressPrefix": "[variables('subnet01').Prefix]"
+            }
+          },
+          {
+            "name": "[variables('subnet02').Name]",
+            "properties": {
+              "addressPrefix": "[variables('subnet02').Prefix]"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "[variables('PublicIP').Name]",
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2020-05-01",
+      "location": "[parameters('location')]",
+      "comments": "Public IP for your Primary NIC",
+      "properties": {
+        "dnsSettings": {
+          "domainNameLabel": "[parameters('PublicDNSLabel')]"
+        },
+        "publicIPAllocationMethod": "Dynamic"
+      },
+      "tags": "[variables('tags')]"
+    }
+  ]
+}
