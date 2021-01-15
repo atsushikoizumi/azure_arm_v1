@@ -10,21 +10,9 @@
       }
     },
     "PublicDNSLabel" : {
-      "type": "SecureString",
-      "metadata": {
-        "description": "Define Public DNS Name"
-      }
-    },
-    "adminUsername": {
       "type": "string",
       "metadata": {
-        "description": "Default Admin username"
-      }
-    },
-    "adminPassword": {
-      "type": "securestring",
-      "metadata": {
-        "description": "Default Admin password"
+        "description": "Define Public DNS Name"
       }
     }
   },
@@ -64,13 +52,17 @@
           {
             "name": "[variables('subnet01').Name]",
             "properties": {
-              "addressPrefix": "[variables('subnet01').Prefix]"
+              "addressPrefix": "[variables('subnet01').Prefix]",
+              "privateEndpointNetworkPolicies": "Enabled",
+              "privateLinkServiceNetworkPolicies": "Enabled"
             }
           },
           {
             "name": "[variables('subnet02').Name]",
             "properties": {
-              "addressPrefix": "[variables('subnet02').Prefix]"
+              "addressPrefix": "[variables('subnet02').Prefix]",
+              "privateEndpointNetworkPolicies": "Enabled",
+              "privateLinkServiceNetworkPolicies": "Enabled"
             }
           }
         ]

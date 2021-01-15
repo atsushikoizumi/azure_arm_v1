@@ -6,14 +6,15 @@ ARM Template を Deploy するにあたって、本スクリプトを実行します。
 
 .DESCRIPTION
 以下の順で処理が実行されます。
-  1. リソースグループの作成
-  2. $TemplateListに記述したテンプレートに対して順次実施（スキップ可）
-    2-1. テンプレートのテスト
-    2-2. テンプレートのデプロイ
+1. リソースグループの作成
+2. $TemplateListに記述したテンプレートに対して順次実施（スキップ可）
+  2-1. テンプレートのテスト
+  2-2. テンプレートのデプロイ
+3. デプロイ結果をログに保存
 
 .PARAMETER
-  デプロイ対象となるのは $TemplateList に記述したテンプレートのみです。
-  パラメータファイルは $PrametersFile で固定です。
+デプロイ対象となるのは $TemplateList に記述したテンプレートのみです。
+パラメータファイルは $PrametersFile で固定です。
 #>
 
 # Environments
@@ -23,6 +24,7 @@ $Owner_tag        = "atsushi.koizumi"
 $Env_tag          = "arm.templete"
 $TemplateList     = ("network","virtualmachine")  # 配列
 $PrametersFile    = "arm.parameters.json"
+$Logfile          = "mydeployments.log"
 
 # error handling
 $ErrorActionPreference = "Stop"
@@ -46,7 +48,8 @@ catch {
     New-AzResourceGroup `
         -Name $ResouceGroupName `
         -Location $location `
-        -Tag @{Owner=$Owner_tag; Env=$Env_tag}
+        -Tag @{Owner=$Owner_tag; Env=$Env_tag} `
+        | Out-File -Append $Logfile
 }
 
 # get datetime
@@ -77,6 +80,7 @@ foreach ($item in $TemplateList) {
                 -TemplateParameterFile $PrametersFile
         } elseif ($YesNo -eq "no") {
             Write-Host "Skip ""$item.json"""
+            Continue
         }
 
         # gain permission to deploy
@@ -94,7 +98,8 @@ foreach ($item in $TemplateList) {
                 -ResourceGroupName $ResouceGroupName `
                 -Mode Incremental `
                 -TemplateFile "$item.json" `
-                -TemplateParameterFile $PrametersFile
+                -TemplateParameterFile $PrametersFile `
+            | Out-File -Append $Logfile
         } elseif ($YesNo -eq "no") {
             Write-Host "Skip ""$item.json"""
         }
