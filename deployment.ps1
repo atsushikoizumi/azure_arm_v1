@@ -18,12 +18,10 @@ ARM Template を Deploy するにあたって、本スクリプトを実行します。
 #>
 
 # Environments
-$ResouceGroupName = "atsushi.koizumi.arm"
-$location         = "eastus"
-$Owner_tag        = "atsushi.koizumi"
-$Env_tag          = "arm.templete"
+$Location         = "eastus"
+$ResouceGroupName = "atsushi.koizumi"
 $TemplateList     = ("network","virtualmachine")  # 配列
-$PrametersFile    = "arm.parameters.json"
+$PrametersFile    = "dev.parameters.json"
 $Logfile          = "mydeployments.log"
 
 # error handling
@@ -34,30 +32,29 @@ $ErrorActionPreference = "Stop"
 # Script Start #
 ################
 
-
-# create resource group
-try {
-    $rgstate = Get-AzResourceGroup -Name $ResouceGroupName
-    if ($rgstate.ProvisioningState -eq "Succeeded") {
-        Write-Output "Resource Group Exists. Start ARM Templete Deploy."
-    } else {
-        Write-Output "Resource Group Exists. But State is not Succeeded."
-    }
-}
-catch {
-    New-AzResourceGroup `
-        -Name $ResouceGroupName `
-        -Location $location `
-        -Tag @{Owner=$Owner_tag; Env=$Env_tag} `
-        | Out-File -Append $Logfile
-}
-
 # get datetime
 $Datetime = Get-date -format "yyyyMMddHHmmss"
 
 # deploy
 foreach ($item in $TemplateList) {
     
+    # create resource group
+    try {
+        $rgstate = Get-AzResourceGroup -Name "$ResouceGroupName.$item"
+        if ($rgstate.ProvisioningState -eq "Succeeded") {
+            Write-Output "Resource Group Exists. Start ARM Templete Deploy."
+        } else {
+            Write-Output "Resource Group Exists. But State is not Succeeded."
+        }
+    }
+    catch {
+        New-AzResourceGroup `
+            -Name "$ResouceGroupName.$item" `
+            -Location $Location `
+            -Tag @{Owner=$OwnerName; Service=$ServiceName; Env=$EnvName} `
+            | Out-File -Append $Logfile
+    }
+
     $CurrentFiles = Get-ChildItem $PSScriptRoot -Name
     # filecheck
     if($CurrentFiles -ccontains "$item.json") {
@@ -74,7 +71,7 @@ foreach ($item in $TemplateList) {
         if ($YesNo -eq "yes") {
             New-AzResourceGroupDeployment `
                 -Name "$item-$Datetime" `
-                -ResourceGroupName $ResouceGroupName `
+                -ResourceGroupName "$ResouceGroupName.$item" `
                 -WhatIf `
                 -TemplateFile "$item.json" `
                 -TemplateParameterFile $PrametersFile
@@ -95,7 +92,7 @@ foreach ($item in $TemplateList) {
         if ($YesNo -eq "yes") {
             New-AzResourceGroupDeployment `
                 -Name "$item-$Datetime" `
-                -ResourceGroupName $ResouceGroupName `
+                -ResourceGroupName "$ResouceGroupName.$item" `
                 -Mode Incremental `
                 -TemplateFile "$item.json" `
                 -TemplateParameterFile $PrametersFile `

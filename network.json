@@ -2,65 +2,74 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "location": {
+    "ownerName": {
       "type": "string",
-      "defaultValue": "[resourceGroup().location]",
       "metadata": {
-        "description": "Location for all resources."
+        "description": "Define Owner Name"
       }
     },
-    "PublicDNSLabel" : {
+    "serviceName": {
       "type": "string",
       "metadata": {
-        "description": "Define Public DNS Name"
+        "description": "Define Service Name"
+      }
+    },
+    "environmentName": {
+      "type": "string",
+      "metadata": {
+        "description": "Define Environment Name"
+      }
+    },
+    "myhomeIPaddress": {
+      "type": "string",
+      "metadata": {
+        "description": "Define My Home IPaddress"
       }
     }
   },
   "variables": {
-    "tags": "[resourceGroup().tags]",
-    "virtualNetwork01": {
-      "Name": "vnet01",
-      "Prefix": "10.1.0.0/16"
+    // 全てのリソースで共有する変数
+    "location": "[resourceGroup().location]",
+    "tags": {
+      "Owner": "[parameters('ownerName')]",
+      "Service": "[parameters('serviceName')]",
+      "Env": "[parameters('environmentName')]"
     },
-    "subnet01": {
-      "Name": "subnet01",
-      "Prefix": "10.1.1.0/24"
+    // リソースネーム = [serviceName]-[environmentName]-*
+    "virtualNetworks01": {
+      "name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-','vnet01')]",
+      "prefix": "10.1.0.0/16",
+      "subnet01": {
+        "name": "subnet01",
+        "prefix": "10.1.1.0/24"
+      }
     },
-    "subnet02": {
-      "Name": "subnet02",
-      "Prefix": "10.1.2.0/24"
-    },
-    "PublicIP": {
-      "Name": "public01"
+    "publicIPAddresses": {
+      "nic01": {
+        "name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-public01')]",
+        "dnsName": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-vm01-',uniqueString(resourceGroup().name))]"
+      }
     }
   },
   "resources": [
     {
       "type": "Microsoft.Network/virtualNetworks",
-      "name": "[variables('virtualNetwork01').Name]",
+      "name": "[variables('virtualNetworks01').name]",
       "apiVersion": "2020-05-01",
-      "location": "[parameters('location')]",
+      "location": "[variables('location')]",
       "comments": "This will build a Virtual Network.",
       "tags": "[variables('tags')]",
       "properties": {
         "addressSpace": {
           "addressPrefixes": [
-            "[variables('virtualNetwork01').Prefix]"
+            "[variables('virtualNetworks01').prefix]"
           ]
         },
         "subnets": [
           {
-            "name": "[variables('subnet01').Name]",
+            "name": "[variables('virtualNetworks01').subnet01.name]",
             "properties": {
-              "addressPrefix": "[variables('subnet01').Prefix]",
-              "privateEndpointNetworkPolicies": "Enabled",
-              "privateLinkServiceNetworkPolicies": "Enabled"
-            }
-          },
-          {
-            "name": "[variables('subnet02').Name]",
-            "properties": {
-              "addressPrefix": "[variables('subnet02').Prefix]",
+              "addressPrefix": "[variables('virtualNetworks01').subnet01.prefix]",
               "privateEndpointNetworkPolicies": "Enabled",
               "privateLinkServiceNetworkPolicies": "Enabled"
             }
@@ -69,14 +78,14 @@
       }
     },
     {
-      "name": "[variables('PublicIP').Name]",
+      "name": "[variables('publicIPAddresses').nic01.name]",
       "type": "Microsoft.Network/publicIPAddresses",
       "apiVersion": "2020-05-01",
-      "location": "[parameters('location')]",
+      "location": "[variables('location')]",
       "comments": "Public IP for your Primary NIC",
       "properties": {
         "dnsSettings": {
-          "domainNameLabel": "[parameters('PublicDNSLabel')]"
+          "domainNameLabel": "[variables('publicIPAddresses').nic01.dnsName]"
         },
         "publicIPAllocationMethod": "Dynamic"
       },
