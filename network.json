@@ -42,8 +42,8 @@
         "name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-','vnet01')]",
         "prefix": "10.1.0.0/16",
         "subnet01": {
-        "name": "subnet01",
-        "prefix": "10.1.1.0/24"
+          "name": "subnet01",
+          "prefix": "10.1.1.0/24"
         }
       }
     },
@@ -60,13 +60,13 @@
     },
     "applicationSecurityGroups": {
       "asg01": {
-        "name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'asg01')]"
+        "name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-asg01')]"
       }
     },
     "networkInterfaces": {
       "nic01": {
         "name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-nic01')]",
-        "ipconf01": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-nic01-ipconf01')]"
+        "ipconf01name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-nic01-ipconf01')]"
       }
     },
     // resourceID は以下に全て記述する。
@@ -182,11 +182,13 @@
       "properties": {
         "ipConfigurations": [
           {
-            "name": "[variables('networkInterfaces').nic01.ipconf01]",
+            "name": "[variables('networkInterfaces').nic01.ipconf01name]",
             "properties": {
+              "primary": true,
               "subnet": {
                 "id": "[variables('resourceID').subnet01]"
               },
+              "privateIPAddressVersion": "IPv4",
               "privateIPAllocationMethod": "Dynamic",
               "publicIpAddress": {
                 "id": "[variables('resourceID').pubip01]"
