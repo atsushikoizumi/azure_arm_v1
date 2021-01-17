@@ -102,6 +102,20 @@ foreach ($item in $TemplateList) {
         }
         Write-Host ""
 
+        # get deployment operation
+        <#
+        try {
+            Get-AzResourceGroupDeploymentOperation `
+            -ResourceGroupName "$ResouceGroupName.$item" `
+            -DeploymentName "$item-$Datetime" `
+            | Format-List -Property StatusCode,ProvisioningState,TargetResource
+            | Out-File -Append $Logfile           
+        }
+        catch {
+            Write-Host ""
+        }
+        #>
+    
     } else {
         Write-Host "[Warning] ""$PSScriptRoot\$item"" does not exist."
     }
