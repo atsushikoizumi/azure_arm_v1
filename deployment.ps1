@@ -1,4 +1,4 @@
-# version 1.0.0
+# version 1.0.1
 
 <#
 .SYNOPSIS
@@ -22,7 +22,7 @@ $Location         = "eastus"
 $ResouceGroupName = "atsushi.koizumi"
 $TemplateList     = ("network","virtualmachine")  # ”z—ñ
 $PrametersFile    = "dev.parameters.json"
-$Logfile          = "mydeployments.log"
+$Logfile          = "deployment.log"
 
 # error handling
 $ErrorActionPreference = "Stop"
