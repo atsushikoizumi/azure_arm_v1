@@ -88,3 +88,11 @@ Tags              :
 ResourceId        : /subscriptions/71e0001a-0944-4a79-a3ec-5db6b44ab936/resourceGroups/atsushi.koizumi.virtualmachine
 
 
+
+ResourceGroupName : atsushi.koizumi.network
+Location          : eastus
+ProvisioningState : Succeeded
+Tags              : 
+ResourceId        : /subscriptions/71e0001a-0944-4a79-a3ec-5db6b44ab936/resourceGroups/atsushi.koizumi.network
+
+

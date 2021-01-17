@@ -36,6 +36,7 @@ $ErrorActionPreference = "Stop"
 $Datetime = Get-date -format "yyyyMMddHHmmss"
 
 # deploy
+$CurrentFiles = Get-ChildItem $PSScriptRoot -Name
 foreach ($item in $TemplateList) {
     
     # create resource group
@@ -51,11 +52,9 @@ foreach ($item in $TemplateList) {
         New-AzResourceGroup `
             -Name "$ResouceGroupName.$item" `
             -Location $Location `
-            -Tag @{Owner=$OwnerName; Service=$ServiceName; Env=$EnvName} `
             | Out-File -Append $Logfile
     }
 
-    $CurrentFiles = Get-ChildItem $PSScriptRoot -Name
     # filecheck
     if($CurrentFiles -ccontains "$item.json") {
 
@@ -93,7 +92,7 @@ foreach ($item in $TemplateList) {
             New-AzResourceGroupDeployment `
                 -Name "$item-$Datetime" `
                 -ResourceGroupName "$ResouceGroupName.$item" `
-                -Mode Incremental `
+                -Mode Complete `
                 -TemplateFile "$item.json" `
                 -TemplateParameterFile $PrametersFile `
             | Out-File -Append $Logfile
