@@ -93,6 +93,7 @@ foreach ($item in $TemplateList) {
                 -Name "$item-$Datetime" `
                 -ResourceGroupName "$ResouceGroupName.$item" `
                 -Mode Complete `
+                -Force `
                 -TemplateFile "$item.json" `
                 -TemplateParameterFile $PrametersFile `
             | Out-File -Append $Logfile

@@ -58,3 +58,36 @@ Outputs                 :
 DeploymentDebugLogLevel : 
 
 
+
+DeploymentName          : network-20210117123214
+ResourceGroupName       : atsushi.koizumi.network
+ProvisioningState       : Succeeded
+Timestamp               : 1/17/2021 3:33:00 AM
+Mode                    : Complete
+TemplateLink            : 
+Parameters              : 
+                          Name               Type                       Value     
+                          =================  =========================  ==========
+                          ownerName          String                     atsushi.koizumi
+                          serviceName        String                     arm       
+                          environmentName    String                     dev       
+                          myhomeIPaddress    String                     60.104.132.36/32
+                          
+Outputs                 : 
+                          Name             Type                       Value     
+                          ===============  =========================  ==========
+                          resourceID       Object                     {
+                            "vnet01": "/subscriptions/71e0001a-0944-4a79-a3ec-5db6b44ab936/resourceGroups/atsushi.koizumi.network/providers/Microsoft.Network/virtualNetworks/arm-dev-vnet01",
+                            "subnet01": "/subscriptions/71e0001a-0944-4a79-a3ec-5db6b44ab936/resourceGroups/atsushi.koizumi.network/providers/Microsoft.Network/virtualNetworks/arm-dev-vnet01/subnets/subnet01",
+                            "pubip01": "/subscriptions/71e0001a-0944-4a79-a3ec-5db6b44ab936/resourceGroups/atsushi.koizumi.network/providers/Microsoft.Network/publicIPAddresses/arm-dev-public01",
+                            "asg01": "/subscriptions/71e0001a-0944-4a79-a3ec-5db6b44ab936/resourceGroups/atsushi.koizumi.network/providers/Microsoft.Network/applicationSecurityGroups/arm-devasg01",
+                            "nsg01": "/subscriptions/71e0001a-0944-4a79-a3ec-5db6b44ab936/resourceGroups/atsushi.koizumi.network/providers/Microsoft.Network/networkSecurityGroups/arm-dev-sg01",
+                            "nic01": "/subscriptions/71e0001a-0944-4a79-a3ec-5db6b44ab936/resourceGroups/atsushi.koizumi.network/providers/Microsoft.Network/networkInterfaces/arm-dev-nic01"
+                          }
+                          dnsName          Object                     {
+                            "vm01": "arm-dev-bvbg357n4dp7g-vm01.eastus.cloudapp.azure.com"
+                          }
+                          
+DeploymentDebugLogLevel : 
+
+
