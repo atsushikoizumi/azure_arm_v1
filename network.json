@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-  "contentVersion": "1.1.1.0",
+  "contentVersion": "1.2.1.0",
   "parameters": {
     "ownerName": {
       "type": "string",
@@ -63,6 +63,12 @@
         "name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'asg01')]"
       }
     },
+    "networkInterfaces": {
+      "nic01": {
+        "name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-nic01')]",
+        "ipconf01": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-nic01-ipconf01')]"
+      }
+    },
     // resourceID は以下に全て記述する。
     // outputs で resourceID をそのまま object 形式で出力する。
     // 各リソースで参照する場合は必ず dependsOn にも記述する。
@@ -71,7 +77,8 @@
       "subnet01": "[resourceId('Microsoft.Network/virtualNetworks/subnets',variables('virtualNetworks').vnet01.name,variables('virtualNetworks').vnet01.subnet01.name)]",
       "pubip01": "[resourceId('Microsoft.Network/publicIPAddresses',variables('publicIPAddresses').pubip01.name)]",
       "asg01": "[resourceId('Microsoft.Network/applicationSecurityGroups',variables('applicationSecurityGroups').asg01.name)]",
-      "nsg01": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('networkSecurityGroups').sg01.name)]"
+      "nsg01": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('networkSecurityGroups').sg01.name)]",
+      "nic01": "[resourceId('Microsoft.Network/networkInterfaces',variables('networkInterfaces').nic01.name)]"
     }
   },
   "resources": [
@@ -152,6 +159,39 @@
               "sourceAddressPrefix": "[parameters('myhomeIPaddress')]",
               "destinationPortRange": "3389",
               "destinationApplicationSecurityGroups": [
+                {
+                  "id": "[variables('resourceID').asg01]"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+{
+      "comments": "Network Inerface",
+      "name": "[variables('networkInterfaces').nic01.name]",
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-05-01",
+      "location": "[variables('location')]",
+      "dependsOn": [
+        "[variables('resourceID').pubip01]",
+        "[variables('resourceID').vnet01]",
+        "[variables('resourceID').asg01]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "[variables('networkInterfaces').nic01.ipconf01]",
+            "properties": {
+              "subnet": {
+                "id": "[variables('resourceID').subnet01]"
+              },
+              "privateIPAllocationMethod": "Dynamic",
+              "publicIpAddress": {
+                "id": "[variables('resourceID').pubip01]"
+              },
+              "applicationSecurityGroups": [
                 {
                   "id": "[variables('resourceID').asg01]"
                 }
