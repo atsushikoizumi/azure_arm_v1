@@ -21,7 +21,7 @@ ARM Template を Deploy するにあたって、本スクリプトを実行します。
 $Location         = "eastus"
 $ResouceGroupName = "atsushi.koizumi"
 $TemplateList     = ("network","virtualmachine")  # 配列
-$PrametersFile    = "dev.parameters.json"
+$EnvCode          = "dev"
 $Logfile          = "deployment.log"
 
 # error handling
@@ -35,13 +35,21 @@ $ErrorActionPreference = "Stop"
 # get datetime
 $Datetime = Get-date -format "yyyyMMddHHmmss"
 
+# check parameters.json
+$PrametersFile    = "$EnvCode.parameters.json"
+if (Test-Path -Path $PrametersFile ) {
+    Write-Host "Parameter File: $EnvCode.parameters.json"
+} else {
+    Write-Host """Parameter File: $EnvCode.parameters.json"" does not exist." -ForegroundColor white -BackgroundColor Red
+}
+
 # deploy
 $CurrentFiles = Get-ChildItem $PSScriptRoot -Name
 foreach ($item in $TemplateList) {
     
     # create resource group
     try {
-        $rgstate = Get-AzResourceGroup -Name "$ResouceGroupName.$item"
+        $rgstate = Get-AzResourceGroup -Name "$ResouceGroupName.$item.$EnvCode"
         if ($rgstate.ProvisioningState -eq "Succeeded") {
             Write-Output "Resource Group Exists. Start ARM Templete Deploy."
         } else {
@@ -50,7 +58,7 @@ foreach ($item in $TemplateList) {
     }
     catch {
         New-AzResourceGroup `
-            -Name "$ResouceGroupName.$item" `
+            -Name "$ResouceGroupName.$item.$EnvCode" `
             -Location $Location `
             | Out-File -Append $Logfile
     }
@@ -70,7 +78,7 @@ foreach ($item in $TemplateList) {
         if ($YesNo -eq "yes") {
             New-AzResourceGroupDeployment `
                 -Name "$item-$Datetime" `
-                -ResourceGroupName "$ResouceGroupName.$item" `
+                -ResourceGroupName "$ResouceGroupName.$item.$EnvCode" `
                 -WhatIf `
                 -TemplateFile "$item.json" `
                 -TemplateParameterFile $PrametersFile
@@ -91,7 +99,7 @@ foreach ($item in $TemplateList) {
         if ($YesNo -eq "yes") {
             New-AzResourceGroupDeployment `
                 -Name "$item-$Datetime" `
-                -ResourceGroupName "$ResouceGroupName.$item" `
+                -ResourceGroupName "$ResouceGroupName.$item.$EnvCode" `
                 -Mode Complete `
                 -Force `
                 -TemplateFile "$item.json" `
@@ -106,7 +114,7 @@ foreach ($item in $TemplateList) {
         <#
         try {
             Get-AzResourceGroupDeploymentOperation `
-            -ResourceGroupName "$ResouceGroupName.$item" `
+            -ResourceGroupName "$ResouceGroupName.$item.$EnvCode" `
             -DeploymentName "$item-$Datetime" `
             | Format-List -Property StatusCode,ProvisioningState,TargetResource
             | Out-File -Append $Logfile           
@@ -117,6 +125,6 @@ foreach ($item in $TemplateList) {
         #>
     
     } else {
-        Write-Host "[Warning] ""$PSScriptRoot\$item"" does not exist."
+        Write-Host "[Warning] ""$PSScriptRoot\$item.json"" does not exist."
     }
 }
