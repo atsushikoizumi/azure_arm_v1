@@ -1,4 +1,4 @@
-# version 1.0.1
+# version 1.1.2
 
 <#
 .SYNOPSIS
@@ -21,7 +21,7 @@ ARM Template を Deploy するにあたって、本スクリプトを実行します。
 $Location         = "eastus"
 $ResouceGroupName = "atsushi.koizumi"
 $TemplateList     = ("network","virtualmachine")  # 配列
-$EnvCode          = "dev"
+$EnvCode          = "dev"   # --> $EnvCode.parametrs.json
 $Logfile          = "deployment.log"
 
 # error handling
