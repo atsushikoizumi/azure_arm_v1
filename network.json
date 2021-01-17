@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-  "contentVersion": "1.0.0.0",
+  "contentVersion": "1.0.1.0",
   "parameters": {
     "ownerName": {
       "type": "string",
@@ -35,13 +35,16 @@
       "Service": "[parameters('serviceName')]",
       "Env": "[parameters('environmentName')]"
     },
+    // "type" 毎に変数を block 形式で書く。
     // リソースネーム = [serviceName]-[environmentName]-*
-    "virtualNetworks01": {
-      "name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-','vnet01')]",
-      "prefix": "10.1.0.0/16",
-      "subnet01": {
+    "virtualNetworks": {
+      "vnet01": {
+        "name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-','vnet01')]",
+        "prefix": "10.1.0.0/16",
+        "subnet01": {
         "name": "subnet01",
         "prefix": "10.1.1.0/24"
+        }
       }
     },
     "publicIPAddresses": {
@@ -54,7 +57,7 @@
   "resources": [
     {
       "type": "Microsoft.Network/virtualNetworks",
-      "name": "[variables('virtualNetworks01').name]",
+      "name": "[variables('virtualNetworks').vnet01.name]",
       "apiVersion": "2020-05-01",
       "location": "[variables('location')]",
       "comments": "This will build a Virtual Network.",
@@ -62,14 +65,14 @@
       "properties": {
         "addressSpace": {
           "addressPrefixes": [
-            "[variables('virtualNetworks01').prefix]"
+            "[variables('virtualNetworks').vnet01.prefix]"
           ]
         },
         "subnets": [
           {
-            "name": "[variables('virtualNetworks01').subnet01.name]",
+            "name": "[variables('virtualNetworks').vnet01.subnet01.name]",
             "properties": {
-              "addressPrefix": "[variables('virtualNetworks01').subnet01.prefix]",
+              "addressPrefix": "[variables('virtualNetworks').vnet01.subnet01.prefix]",
               "privateEndpointNetworkPolicies": "Enabled",
               "privateLinkServiceNetworkPolicies": "Enabled"
             }
