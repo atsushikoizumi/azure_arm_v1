@@ -142,6 +142,7 @@
       "type": "Microsoft.Network/networkSecurityGroups",
       "apiVersion": "2020-05-01",
       "location": "[variables('location')]",
+      "tags": "[variables('tags')]",
       "dependsOn": [
         "[variables('resourceID').asg01]"
       ],
@@ -168,12 +169,13 @@
         ]
       }
     },
-{
+    {
       "comments": "Network Inerface",
       "name": "[variables('networkInterfaces').nic01.name]",
       "type": "Microsoft.Network/networkInterfaces",
       "apiVersion": "2020-05-01",
       "location": "[variables('location')]",
+      "tags": "[variables('tags')]",
       "dependsOn": [
         "[variables('resourceID').pubip01]",
         "[variables('resourceID').vnet01]",
