@@ -1,2 +1,2 @@
-dev.parameters.json
+*.parameters.json
 deployment.log

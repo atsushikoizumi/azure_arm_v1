@@ -1,4 +1,4 @@
-# version 1.1.2
+# version 2.0.0
 
 <#
 .SYNOPSIS
@@ -7,124 +7,118 @@ ARM Template を Deploy するにあたって、本スクリプトを実行します。
 .DESCRIPTION
 以下の順で処理が実行されます。
 1. リソースグループの作成
-2. $TemplateListに記述したテンプレートに対して順次実施（スキップ可）
+2. $templateListに記述したテンプレートに対して順次実施（スキップ可）
   2-1. テンプレートのテスト
   2-2. テンプレートのデプロイ
 3. デプロイ結果をログに保存
 
-.PARAMETER
-デプロイ対象となるのは $TemplateList に記述したテンプレートのみです。
-パラメータファイルは $PrametersFile で固定です。
+.OPERATION
+以下の方針で運用します。
+1. １環境：１テンプレートファイル
+2. リソースグループ名は $ownerName.$serviceName.$environmentName
+3. タグを付与 Owner=$ownerName,Service=$serviceName,Env=$environmentName
+4. デプロイモードは Complete
+
 #>
 
 # Environments
-$Location         = "eastus"
-$ResouceGroupName = "atsushi.koizumi"
-$TemplateList     = ("network","virtualmachine")  # 配列
-$EnvCode          = "dev"   # --> $EnvCode.parametrs.json
-$Logfile          = "deployment.log"
-
-# error handling
-$ErrorActionPreference = "Stop"
-
+$location          = "eastus"
+$ownerName         = "atsushi.koizumi"
+$serviceName       = Read-Host "dba"  # 選択させたいサービス名を記載
+$environmentName   = Read-Host "dev/stg/prd"  # 選択させたい環境名を記載
+$templateFile      = "$PSScriptRoot\$serviceName\azuredeploy.json"
+$prametersFile     = "$PSScriptRoot\$serviceName\$environmentName.parameters.json"
+$logfile           = "deployment.log"
+$resourceGroupName = "$ownerName.$serviceName.$environmentName"
 
 ################
 # Script Start #
 ################
 
+# error handling
+$ErrorActionPreference = "Stop"
+
 # get datetime
 $Datetime = Get-date -format "yyyyMMddHHmmss"
 
-# check parameters.json
-$PrametersFile    = "$EnvCode.parameters.json"
-if (Test-Path -Path $PrametersFile ) {
-    Write-Host "Parameter File: $EnvCode.parameters.json"
+# check $templateFile
+Write-Host ""
+if (Test-Path -Path $templateFile ) {
+    Write-Host "Template File: $templateFile"
 } else {
-    Write-Host """Parameter File: $EnvCode.parameters.json"" does not exist." -ForegroundColor white -BackgroundColor Red
+    Write-Host """Template File: $templateFile"" does not exist."
+    exit
 }
 
-# deploy
-$CurrentFiles = Get-ChildItem $PSScriptRoot -Name
-foreach ($item in $TemplateList) {
-    
-    # create resource group
-    try {
-        $rgstate = Get-AzResourceGroup -Name "$ResouceGroupName.$item.$EnvCode"
-        if ($rgstate.ProvisioningState -eq "Succeeded") {
-            Write-Output "Resource Group Exists. Start ARM Templete Deploy."
-        } else {
-            Write-Output "Resource Group Exists. But State is not Succeeded."
-        }
-    }
-    catch {
-        New-AzResourceGroup `
-            -Name "$ResouceGroupName.$item.$EnvCode" `
-            -Location $Location `
-            | Out-File -Append $Logfile
-    }
+# check $prametersFile
+if (Test-Path -Path $prametersFile ) {
+    Write-Host "Parameter File: $prametersFile"
+} else {
+    Write-Host """Parameter File: $prametersFile"" does not exist."
+    exit
+}
+Write-Host ""
 
-    # filecheck
-    if($CurrentFiles -ccontains "$item.json") {
-
-        # gain permission to test
-        Write-Host "Test the templete ""$item.json"" ?"
-        $YesNo = Read-Host "yes or no "
-        while (($YesNo -ne "yes") -And ($YesNo -ne "no")) {
-            $YesNo = Read-Host "yes or no "
-        }
-        Write-Host ""
-
-        # test templete
-        if ($YesNo -eq "yes") {
-            New-AzResourceGroupDeployment `
-                -Name "$item-$Datetime" `
-                -ResourceGroupName "$ResouceGroupName.$item.$EnvCode" `
-                -WhatIf `
-                -TemplateFile "$item.json" `
-                -TemplateParameterFile $PrametersFile
-        } elseif ($YesNo -eq "no") {
-            Write-Host "Skip ""$item.json"""
-            Continue
-        }
-
-        # gain permission to deploy
-        Write-Host "Deploy the templete ""$item.json"" ?"
-        $YesNo = Read-Host "yes or no "
-        while (($YesNo -ne "yes") -And ($YesNo -ne "no")) {
-            $YesNo = Read-Host "yes or no "
-        }
-        Write-Host ""
-
-        # deeploy start
-        if ($YesNo -eq "yes") {
-            New-AzResourceGroupDeployment `
-                -Name "$item-$Datetime" `
-                -ResourceGroupName "$ResouceGroupName.$item.$EnvCode" `
-                -Mode Complete `
-                -Force `
-                -TemplateFile "$item.json" `
-                -TemplateParameterFile $PrametersFile `
-            | Out-File -Append $Logfile
-        } elseif ($YesNo -eq "no") {
-            Write-Host "Skip ""$item.json"""
-        }
-        Write-Host ""
-
-        # get deployment operation
-        <#
-        try {
-            Get-AzResourceGroupDeploymentOperation `
-            -ResourceGroupName "$ResouceGroupName.$item.$EnvCode" `
-            -DeploymentName "$item-$Datetime" `
-            | Format-List -Property StatusCode,ProvisioningState,TargetResource
-            | Out-File -Append $Logfile           
-        }
-        catch {
-            Write-Host ""
-        }
-        #>
-    
+# deploy start
+# create resource group
+try {
+    $rgstate = Get-AzResourceGroup -Name "$resourceGroupName"
+    if ($rgstate.ProvisioningState -eq "Succeeded") {
     } else {
-        Write-Host "[Warning] ""$PSScriptRoot\$item.json"" does not exist."
+        Write-Host "Resource Group Exists. But State is not Succeeded."
+        exit
     }
+}
+catch {
+    New-AzResourceGroup `
+        -Name "$resourceGroupName" `
+        -location $location `
+        -Tag @{Owner=$ownerName; Service=$serviceName; Env=$environmentName} `
+        | Out-File -Append $logfile
+}
+
+# gain permission to test
+Write-Host "Test the template ""$templateFile"" ?"
+$YesNo = Read-Host "yes or no "
+while (($YesNo -ne "yes") -And ($YesNo -ne "no")) {
+    $YesNo = Read-Host "yes or no "
+}
+Write-Host ""
+
+# test template
+if ($YesNo -eq "yes") {
+    New-AzResourceGroupDeployment `
+        -Name "$serviceName-$environmentName-$Datetime" `
+        -ResourceGroupName "$resourceGroupName" `
+        -WhatIf `
+        -TemplateFile $templateFile `
+        -TemplateParameterFile $prametersFile
+} elseif ($YesNo -eq "no") {
+    Write-Host "Skip test the template ""$templateFile""."
+    Write-Host "End."
+    Write-Host ""
+    exit
+}
+
+# gain permission to deploy
+Write-Host "Deploy the template ""$templateFile"" ?"
+$YesNo = Read-Host "yes or no "
+while (($YesNo -ne "yes") -And ($YesNo -ne "no")) {
+    $YesNo = Read-Host "yes or no "
+}
+Write-Host ""
+
+# deeploy start
+if ($YesNo -eq "yes") {
+    New-AzResourceGroupDeployment `
+        -Name "$serviceName-$environmentName-$Datetime" `
+        -ResourceGroupName "$resourceGroupName" `
+        -Mode Complete `
+        -Force `
+        -TemplateFile $templateFile `
+        -TemplateParameterFile $prametersFile `
+    | Out-File -Append $logfile
+    Write-Host ""
+} elseif ($YesNo -eq "no") {
+    Write-Host "Skip deploy the template ""$templateFile""."
 }

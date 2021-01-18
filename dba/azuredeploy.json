@@ -55,7 +55,7 @@
     "publicIPAddresses": {
       "pubip01": {
         "name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-public01')]",
-        "dnsName": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-',uniqueString(resourceGroup().name),'-vm01')]"
+        "dnsName": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-vm01-',uniqueString(resourceGroup().name))]"
       }
     },
     "applicationSecurityGroups": {
@@ -87,6 +87,9 @@
       "type": "Microsoft.Network/virtualNetworks",
       "name": "[variables('virtualNetworks').vnet01.name]",
       "apiVersion": "2020-05-01",
+      "dependsOn": [
+        "[variables('resourceID').nsg01]"
+      ],
       "location": "[variables('location')]",
       "tags": "[variables('tags')]",
       "properties": {
@@ -108,10 +111,7 @@
             }
           }
         ]
-      },   
-      "dependsOn": [
-        "[variables('resourceID').nsg01]"
-      ]
+      }
     },
     {
       "comments": "Public IP",
@@ -141,11 +141,11 @@
       "name": "[variables('networkSecurityGroups').sg01.name]",
       "type": "Microsoft.Network/networkSecurityGroups",
       "apiVersion": "2020-05-01",
-      "location": "[variables('location')]",
-      "tags": "[variables('tags')]",
       "dependsOn": [
         "[variables('resourceID').asg01]"
       ],
+      "location": "[variables('location')]",
+      "tags": "[variables('tags')]",
       "properties": {
         "securityRules": [
           {
@@ -174,13 +174,12 @@
       "name": "[variables('networkInterfaces').nic01.name]",
       "type": "Microsoft.Network/networkInterfaces",
       "apiVersion": "2020-05-01",
-      "location": "[variables('location')]",
-      "tags": "[variables('tags')]",
       "dependsOn": [
         "[variables('resourceID').pubip01]",
-        "[variables('resourceID').vnet01]",
-        "[variables('resourceID').asg01]"
+        "[variables('resourceID').vnet01]"
       ],
+      "location": "[variables('location')]",
+      "tags": "[variables('tags')]",
       "properties": {
         "ipConfigurations": [
           {
