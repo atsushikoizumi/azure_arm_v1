@@ -2,30 +2,30 @@
 
 <#
 .SYNOPSIS
-ARM Template ‚ğ Deploy ‚·‚é‚É‚ ‚½‚Á‚ÄA–{ƒXƒNƒŠƒvƒg‚ğÀs‚µ‚Ü‚·B
+ARM Template ï¿½ï¿½ Deploy ï¿½ï¿½ï¿½ï¿½É‚ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÄAï¿½{ï¿½Xï¿½Nï¿½ï¿½ï¿½vï¿½gï¿½ï¿½ï¿½ï¿½ï¿½sï¿½ï¿½ï¿½Ü‚ï¿½ï¿½B
 
 .DESCRIPTION
-ˆÈ‰º‚Ì‡‚Åˆ—‚ªÀs‚³‚ê‚Ü‚·B
-1. ƒŠƒ\[ƒXƒOƒ‹[ƒv‚Ìì¬
-2. $templateList‚É‹Lq‚µ‚½ƒeƒ“ƒvƒŒ[ƒg‚É‘Î‚µ‚Ä‡ŸÀ{iƒXƒLƒbƒv‰Âj
-  2-1. ƒeƒ“ƒvƒŒ[ƒg‚ÌƒeƒXƒg
-  2-2. ƒeƒ“ƒvƒŒ[ƒg‚ÌƒfƒvƒƒC
-3. ƒfƒvƒƒCŒ‹‰Ê‚ğƒƒO‚É•Û‘¶
+ï¿½È‰ï¿½ï¿½Ìï¿½ï¿½Åï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½sï¿½ï¿½ï¿½ï¿½Ü‚ï¿½ï¿½B
+1. ï¿½ï¿½ï¿½\ï¿½[ï¿½Xï¿½Oï¿½ï¿½ï¿½[ï¿½vï¿½Ìì¬
+2. $templateListï¿½É‹Lï¿½qï¿½ï¿½ï¿½ï¿½ï¿½eï¿½ï¿½ï¿½vï¿½ï¿½ï¿½[ï¿½gï¿½É‘Î‚ï¿½ï¿½Äï¿½ï¿½ï¿½ï¿½ï¿½ï¿½{ï¿½iï¿½Xï¿½Lï¿½bï¿½vï¿½Âj
+  2-1. ï¿½eï¿½ï¿½ï¿½vï¿½ï¿½ï¿½[ï¿½gï¿½Ìƒeï¿½Xï¿½g
+  2-2. ï¿½eï¿½ï¿½ï¿½vï¿½ï¿½ï¿½[ï¿½gï¿½Ìƒfï¿½vï¿½ï¿½ï¿½C
+3. ï¿½fï¿½vï¿½ï¿½ï¿½Cï¿½ï¿½ï¿½Ê‚ï¿½ï¿½ï¿½ï¿½Oï¿½É•Û‘ï¿½
 
 .OPERATION
-ˆÈ‰º‚Ì•ûj‚Å‰^—p‚µ‚Ü‚·B
-1. ‚PŠÂ‹«F‚Pƒeƒ“ƒvƒŒ[ƒgƒtƒ@ƒCƒ‹
-2. ƒŠƒ\[ƒXƒOƒ‹[ƒv–¼‚Í $ownerName.$serviceName.$environmentName
-3. ƒ^ƒO‚ğ•t—^ Owner=$ownerName,Service=$serviceName,Env=$environmentName
-4. ƒfƒvƒƒCƒ‚[ƒh‚Í Complete
+ï¿½È‰ï¿½ï¿½Ì•ï¿½ï¿½jï¿½Å‰^ï¿½pï¿½ï¿½ï¿½Ü‚ï¿½ï¿½B
+1. ï¿½Pï¿½Â‹ï¿½ï¿½Fï¿½Pï¿½eï¿½ï¿½ï¿½vï¿½ï¿½ï¿½[ï¿½gï¿½tï¿½@ï¿½Cï¿½ï¿½
+2. ï¿½ï¿½ï¿½\ï¿½[ï¿½Xï¿½Oï¿½ï¿½ï¿½[ï¿½vï¿½ï¿½ï¿½ï¿½ $ownerName.$serviceName.$environmentName
+3. ï¿½^ï¿½Oï¿½ï¿½tï¿½^ Owner=$ownerName,Service=$serviceName,Env=$environmentName
+4. ï¿½fï¿½vï¿½ï¿½ï¿½Cï¿½ï¿½ï¿½[ï¿½hï¿½ï¿½ Complete
 
 #>
 
 # Environments
 $location          = "eastus"
 $ownerName         = "atsushi.koizumi"
-$serviceName       = Read-Host "dba"  # ‘I‘ğ‚³‚¹‚½‚¢ƒT[ƒrƒX–¼‚ğ‹LÚ
-$environmentName   = Read-Host "dev/stg/prd"  # ‘I‘ğ‚³‚¹‚½‚¢ŠÂ‹«–¼‚ğ‹LÚ
+$serviceName       = Read-Host "dba"  # ï¿½Iï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Tï¿½[ï¿½rï¿½Xï¿½ï¿½ï¿½ï¿½ï¿½Lï¿½ï¿½
+$environmentName   = Read-Host "dev/stg/prd"  # ï¿½Iï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â‹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Lï¿½ï¿½
 $templateFile      = "$PSScriptRoot\$serviceName\azuredeploy.json"
 $prametersFile     = "$PSScriptRoot\$serviceName\$environmentName.parameters.json"
 $logfile           = "deployment.log"
@@ -62,7 +62,7 @@ Write-Host ""
 # deploy start
 # create resource group
 try {
-    $rgstate = Get-AzResourceGroup -Name "$resourceGroupName"
+    $rgstate = Get-AzResourceGroup -Name $resourceGroupName
     if ($rgstate.ProvisioningState -eq "Succeeded") {
     } else {
         Write-Host "Resource Group Exists. But State is not Succeeded."
@@ -71,10 +71,10 @@ try {
 }
 catch {
     New-AzResourceGroup `
-        -Name "$resourceGroupName" `
+        -Name $resourceGroupName `
         -location $location `
-        -Tag @{Owner=$ownerName; Service=$serviceName; Env=$environmentName} `
-        | Out-File -Append $logfile
+        -Tag @{Owner=$ownerName; Service=$serviceName; Env=$environmentName} | `
+        Out-File -Append $logfile
 }
 
 # gain permission to test
@@ -89,7 +89,7 @@ Write-Host ""
 if ($YesNo -eq "yes") {
     New-AzResourceGroupDeployment `
         -Name "$serviceName-$environmentName-$Datetime" `
-        -ResourceGroupName "$resourceGroupName" `
+        -ResourceGroupName $resourceGroupName `
         -WhatIf `
         -TemplateFile $templateFile `
         -TemplateParameterFile $prametersFile
@@ -108,16 +108,23 @@ while (($YesNo -ne "yes") -And ($YesNo -ne "no")) {
 }
 Write-Host ""
 
-# deeploy start
+# deploy start
 if ($YesNo -eq "yes") {
     New-AzResourceGroupDeployment `
         -Name "$serviceName-$environmentName-$Datetime" `
-        -ResourceGroupName "$resourceGroupName" `
+        -ResourceGroupName $resourceGroupName `
         -Mode Complete `
         -Force `
         -TemplateFile $templateFile `
-        -TemplateParameterFile $prametersFile `
-    | Out-File -Append $logfile
+        -TemplateParameterFile $prametersFile | `
+        Out-File -Append $logfile
+
+    # get deployment operetion
+    Get-AzResourceGroupDeploymentOperation `
+        -ResourceGroupName $resourceGroupName `
+        -DeploymentName "$serviceName-$environmentName-$Datetime" | `
+        Out-File -Append $logfile
+
     Write-Host ""
 } elseif ($YesNo -eq "no") {
     Write-Host "Skip deploy the template ""$templateFile""."
