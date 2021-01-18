@@ -291,7 +291,8 @@
       "location": "[variables('location')]",
       "dependsOn": [
         "[variables('resourceID').nic01]",
-        "[variables('resourceID').vm01dataDisk01]"
+        "[variables('resourceID').vm01dataDisk01]",
+        "[variables('resourceID').vm01dataDisk02]"
       ],
       "tags": "[variables('tags')]",
       "properties": {
