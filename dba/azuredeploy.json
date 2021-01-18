@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-  "contentVersion": "1.2.1.0",
+  "contentVersion": "1.3.1.0",
   "parameters": {
     "ownerName": {
       "type": "string",
@@ -24,6 +24,12 @@
       "type": "string",
       "metadata": {
         "description": "Define My Home IPaddress"
+      }
+    },
+    "adminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Define Password"
       }
     }
   },
@@ -69,7 +75,22 @@
         "ipconf01name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-nic01-ipconf01')]"
       }
     },
-    // resourceID は以下に全て記述する。
+    "storageAccounts": {
+      "storage01": {
+        "name": "[concat(parameters('serviceName'),parameters('environmentName'),'storage01')]"
+      }
+    },
+    "virtualMachines": {
+      "vm01": {
+        "name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-vm01')]",
+        "computerName": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-vm01')]",
+        "adminUsername": "[concat(parameters('serviceName'),parameters('environmentName'),'vm01','admin')]",
+        "osDiskName": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-vm01-osDisk')]",
+        "dataDiskName01": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-vm01-dataDisk01')]",
+        "dataDiskName02": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-vm01-dataDisk02')]"
+      }
+    },
+    // resourceID() は以下に全て記述する。
     // outputs で resourceID をそのまま object 形式で出力する。
     // 各リソースで参照する場合は必ず dependsOn にも記述する。
     "resourceID": {
@@ -78,7 +99,11 @@
       "pubip01": "[resourceId('Microsoft.Network/publicIPAddresses',variables('publicIPAddresses').pubip01.name)]",
       "asg01": "[resourceId('Microsoft.Network/applicationSecurityGroups',variables('applicationSecurityGroups').asg01.name)]",
       "nsg01": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('networkSecurityGroups').sg01.name)]",
-      "nic01": "[resourceId('Microsoft.Network/networkInterfaces',variables('networkInterfaces').nic01.name)]"
+      "nic01": "[resourceId('Microsoft.Network/networkInterfaces',variables('networkInterfaces').nic01.name)]",
+      "storage01": "[resourceId('Microsoft.Storage/storageAccounts',variables('storageAccounts').storage01.name)]",
+      "vm01": "[resourceId('Microsoft.Compute/virtualMachines',variables('virtualMachines').vm01.name)]",
+      "vm01dataDisk01": "[resourceId('Microsoft.Compute/disks',variables('virtualMachines').vm01.dataDiskName01)]",
+      "vm01dataDisk02": "[resourceId('Microsoft.Compute/disks',variables('virtualMachines').vm01.dataDiskName02)]"
     }
   },
   "resources": [
@@ -203,6 +228,143 @@
           }
         ]
       }
+    },
+    {
+      "comments": "Storage Account",
+      "type": "Microsoft.Storage/storageAccounts",
+      "name": "[variables('storageAccounts').storage01.name]",
+      "apiVersion": "2019-06-01",
+      "location": "[variables('location')]",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "kind": "StorageV2",
+      "tags": "[variables('tags')]"
+    },
+    {
+      "type": "Microsoft.Compute/disks",
+      "apiVersion": "2019-07-01",
+      "name": "[variables('virtualMachines').vm01.dataDiskName01]",
+      "location": "[variables('location')]",
+      "properties": {
+        "osType": "Windows",
+        "diskIOPSReadWrite": 500,
+        "diskMBpsReadWrite": 60,
+        "diskSizeGB": 256,
+        "creationData": {
+          "createOption": "Empty"
+        },
+        "encryption": {
+          "type": "EncryptionAtRestWithPlatformKey"
+        }
+      },
+      "sku": {
+        "name": "StandardSSD_LRS"
+      }
+    },
+    {
+      "type": "Microsoft.Compute/disks",
+      "apiVersion": "2019-07-01",
+      "name": "[variables('virtualMachines').vm01.dataDiskName02]",
+      "location": "[variables('location')]",
+      "properties": {
+        "osType": "Windows",
+        "diskIOPSReadWrite": 500,
+        "diskMBpsReadWrite": 60,
+        "diskSizeGB": 256,
+        "creationData": {
+          "createOption": "Empty"
+        },
+        "encryption": {
+          "type": "EncryptionAtRestWithPlatformKey"
+        }
+      },
+      "sku": {
+        "name": "StandardSSD_LRS"
+      }
+    },
+    {
+      "comments": "Virtual Machine",
+      "name": "[variables('virtualMachines').vm01.name]",
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2019-07-01",
+      "location": "[variables('location')]",
+      "dependsOn": [
+        "[variables('resourceID').nic01]",
+        "[variables('resourceID').vm01dataDisk01]"
+      ],
+      "tags": "[variables('tags')]",
+      "properties": {
+        "osProfile": {
+          "computerName": "[variables('virtualMachines').vm01.computerName]",
+          "adminUsername": "[variables('virtualMachines').vm01.adminUsername]",
+          "adminPassword": "[parameters('adminPassword')]",
+          "windowsConfiguration": {
+            "provisionVmAgent": true,
+            "enableAutomaticUpdates": true,
+            "timeZone": "Tokyo Standard Time"
+          }
+        },
+        "hardwareProfile": {
+          "vmSize": "Standard_F2"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "MicrosoftWindowsServer",
+            "offer": "WindowsServer",
+            "sku": "2019-Datacenter",
+            "version": "latest"
+          },
+          "osDisk": {
+            // Cannot attach an existing OS disk if the VM is created from a platform, user or a shared gallery image.
+            "name": "[variables('virtualMachines').vm01.osDiskName]",
+            "osType": "Windows",
+            "diskSizeGB": 128,
+            "caching": "ReadOnly",
+            "createOption": "FromImage",
+            "managedDisk": {
+              "storageAccountType": "StandardSSD_LRS"
+            }
+          },
+          "dataDisks": [
+            // start --> diskmgmt.msc (Disk Management wizard)
+            {
+              "lun": 0,
+              "name": "[variables('virtualMachines').vm01.dataDiskName01]",
+              "managedDisk": {
+                "id": "[variables('resourceID').vm01dataDisk01]"
+              },
+              "createOption": "Attach",
+              "caching": "ReadOnly"
+            },
+            {
+              "lun": 1,
+              "name": "[variables('virtualMachines').vm01.dataDiskName02]",
+              "managedDisk": {
+                "id": "[variables('resourceID').vm01dataDisk02]"
+              },
+              "createOption": "Attach",
+              "caching": "ReadOnly"
+            }
+          ]
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "properties": {
+                "primary": true
+              },
+              "id": "[variables('resourceID').nic01]"
+            }
+          ]
+        },
+        "diagnosticsProfile": {
+          "bootDiagnostics": {
+            "enabled": true,
+            "storageUri": "[reference(variables('resourceID').storage01, '2019-06-01').primaryEndpoints['blob']]"
+          }
+        }
+      }
     }
   ],
   "outputs": {
@@ -213,7 +375,10 @@
     "dnsName": {
       "type": "object",
       "value": {
-        "vm01": "[reference(variables('resourceID').pubip01).dnsSettings.fqdn]"
+        "vm01": {
+          "fqdn": "[reference(variables('resourceID').pubip01).dnsSettings.fqdn]",
+          "adminUsername": "[variables('virtualMachines').vm01.adminUsername]"
+        } 
       }
     }
   }
