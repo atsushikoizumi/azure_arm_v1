@@ -321,7 +321,7 @@
             "name": "[variables('virtualMachines').vm01.osDiskName]",
             "osType": "Windows",
             "diskSizeGB": 128,
-            "caching": "ReadOnly",
+            "caching": "ReadWrite",
             "createOption": "FromImage",
             "managedDisk": {
               "storageAccountType": "StandardSSD_LRS"
@@ -336,7 +336,7 @@
                 "id": "[variables('resourceID').vm01dataDisk01]"
               },
               "createOption": "Attach",
-              "caching": "ReadOnly"
+              "caching": "ReadWrite"
             },
             {
               "lun": 1,
@@ -345,7 +345,7 @@
                 "id": "[variables('resourceID').vm01dataDisk02]"
               },
               "createOption": "Attach",
-              "caching": "ReadOnly"
+              "caching": "ReadWrite"
             }
           ]
         },
