@@ -2,30 +2,29 @@
 
 <#
 .SYNOPSIS
-ARM Template �� Deploy ����ɂ������āA�{�X�N���v�g�����s���܂��B
+ARM Template Deploy Script
 
 .DESCRIPTION
-�ȉ��̏��ŏ��������s����܂��B
-1. ���\�[�X�O���[�v�̍쐬
-2. $templateList�ɋL�q�����e���v���[�g�ɑ΂��ď������{�i�X�L�b�v�j
-  2-1. �e���v���[�g�̃e�X�g
-  2-2. �e���v���[�g�̃f�v���C
-3. �f�v���C���ʂ����O�ɕۑ�
+This Script executes in the following order.
+1. Set Environments.
+2. Create ResouceGroup if it does not exist.
+3. Test Template File.
+4. Deploy Template File.
 
-.OPERATION
-�ȉ��̕��j�ŉ^�p���܂��B
-1. �P���F�P�e���v���[�g�t�@�C��
-2. ���\�[�X�O���[�v���� $ownerName.$serviceName.$environmentName
-3. �^�O��t�^ Owner=$ownerName,Service=$serviceName,Env=$environmentName
-4. �f�v���C���[�h�� Complete
+.POLICY
+Operate as follows.
+1. One TemplateFile, One ResouceGroup.
+2. ResouceGroup Name is "$ownerName.$serviceName.$environmentName".
+3. Tags are Owner=$ownerName, Service=$serviceName, Env=$environmentName.
+4. Deploy mode is Complete.
 
 #>
 
 # Environments
 $location          = "eastus"
 $ownerName         = "atsushi.koizumi"
-$serviceName       = Read-Host "dba"  # �I�����������T�[�r�X�����L��
-$environmentName   = Read-Host "dev/stg/prd"  # �I�����������������L��
+$serviceName       = Read-Host "dba"  # Define service name
+$environmentName   = Read-Host "dev/stg/prd"  # Define environment name
 $templateFile      = "$PSScriptRoot\$serviceName\azuredeploy.json"
 $prametersFile     = "$PSScriptRoot\$serviceName\$environmentName.parameters.json"
 $logfile           = "deployment.log"
