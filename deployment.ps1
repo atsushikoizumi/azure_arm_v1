@@ -26,6 +26,7 @@ Do the following.
 [mac] install PowerShell & Az Module
     brew install --cask powershell
     pwsh
+    Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
     Install-Module -Name Az -AllowClobber -Scope CurrentUser
 [common] Connect to Azure with a browser sign in
     PS > Connect-AzAccount
