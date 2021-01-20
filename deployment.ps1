@@ -5,18 +5,30 @@
 ARM Template Deploy Script
 
 .DESCRIPTION
-This Script executes in the following order.
-1. Set Environments.
-2. Create ResouceGroup if it does not exist.
-3. Test Template File.
-4. Deploy Template File.
+This Script executes in the following order
+1. Set Environments
+2. Create ResouceGroup if it does not exist
+3. Test Template File
+4. Deploy Template File
 
 .POLICY
-Operate as follows.
-1. One TemplateFile, One ResouceGroup.
-2. ResouceGroup Name is "$ownerName.$serviceName.$environmentName".
-3. Tags are Owner=$ownerName, Service=$serviceName, Env=$environmentName.
-4. Deploy mode is Complete.
+Operate as follows
+1. One TemplateFile, One ResouceGroup
+2. ResouceGroup Name is "$ownerName.$serviceName.$environmentName"
+3. Tags are Owner=$ownerName, Service=$serviceName, Env=$environmentName
+4. Deploy mode is Complete
+
+.READY
+Do the following.
+[windows] install Az Module
+    Install-Module -Name PowerShellGet -Force
+    Install-Module -Name Az -AllowClobber -Scope CurrentUser
+[mac] install PowerShell & Az Module
+    brew install --cask powershell
+    pwsh
+    Install-Module -Name Az -AllowClobber -Scope CurrentUser
+[common] Connect to Azure with a browser sign in
+    PS > Connect-AzAccount
 
 #>
 
