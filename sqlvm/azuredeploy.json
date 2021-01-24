@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-  "contentVersion": "1.3.1.0",
+  "contentVersion": "1.5.0.0",
   "parameters": {
     "ownerName": {
       "type": "string",
@@ -20,10 +20,16 @@
         "description": "Define Environment Name"
       }
     },
-    "myhomeIPaddress": {
+    "myHomeIpAddress": {
       "type": "string",
       "metadata": {
-        "description": "Define My Home IPaddress"
+        "description": "Define My Home IP Address"
+      }
+    },
+    "myMobileIpAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "Define My Mobile IP Address"
       }
     },
     "adminPassword": {
@@ -87,7 +93,15 @@
         "adminUsername": "[concat(parameters('serviceName'),parameters('environmentName'),'vm01','admin')]",
         "osDiskName": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-vm01-osDisk')]",
         "dataDiskName01": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-vm01-dataDisk01')]",
-        "dataDiskName02": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-vm01-dataDisk02')]"
+        "dataDiskName02": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-vm01-dataDisk02')]",
+        "dataDiskName03": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-vm01-dataDisk03')]",
+        "SqlIaaSAgent": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-vm01', '/SqlIaasExtension')]"
+      }
+    },
+    "sqlVirtualMachines": {
+      "sqlonvm01": {
+        "name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-sqlonvm01')]",
+        "sqlAuthUpdateUserName" : "[concat(parameters('serviceName'),parameters('environmentName'),'sqladmin')]"
       }
     },
     // resourceID() は以下に全て記述する。
@@ -103,7 +117,10 @@
       "storage01": "[resourceId('Microsoft.Storage/storageAccounts',variables('storageAccounts').storage01.name)]",
       "vm01": "[resourceId('Microsoft.Compute/virtualMachines',variables('virtualMachines').vm01.name)]",
       "vm01dataDisk01": "[resourceId('Microsoft.Compute/disks',variables('virtualMachines').vm01.dataDiskName01)]",
-      "vm01dataDisk02": "[resourceId('Microsoft.Compute/disks',variables('virtualMachines').vm01.dataDiskName02)]"
+      "vm01dataDisk02": "[resourceId('Microsoft.Compute/disks',variables('virtualMachines').vm01.dataDiskName02)]",
+      "vm01dataDisk03": "[resourceId('Microsoft.Compute/disks',variables('virtualMachines').vm01.dataDiskName03)]",
+      "SqlIaaSAgent01": "[resourceId('Microsoft.Compute/virtualMachines/extensions',variables('virtualMachines').vm01.name,'SqlIaasExtension')]",
+      "sqlonvm01": "[resourceId('Microsoft.SqlVirtualMachine/sqlVirtualMachines',variables('sqlVirtualMachines').sqlonvm01.name)]"
     }
   },
   "resources": [
@@ -174,7 +191,7 @@
       "properties": {
         "securityRules": [
           {
-            "name": "myhome",
+            "name": "myhome_nic01",
             "properties": {
               "description": "Allow RDP from my home ip address",
               "direction": "Inbound",
@@ -182,7 +199,25 @@
               "priority": 1001,
               "protocol": "Tcp",
               "sourcePortRange": "*",
-              "sourceAddressPrefix": "[parameters('myhomeIPaddress')]",
+              "sourceAddressPrefix": "[parameters('myHomeIpAddress')]",
+              "destinationPortRange": "3389",
+              "destinationApplicationSecurityGroups": [
+                {
+                  "id": "[variables('resourceID').asg01]"
+                }
+              ]
+            }
+          },
+          {
+            "name": "mymobile_nic01",
+            "properties": {
+              "description": "Allow RDP from my mobile ip address",
+              "direction": "Inbound",
+              "access": "Allow",
+              "priority": 1002,
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "sourceAddressPrefix": "[parameters('myMobileIpAddress')]",
               "destinationPortRange": "3389",
               "destinationApplicationSecurityGroups": [
                 {
@@ -201,7 +236,8 @@
       "apiVersion": "2020-05-01",
       "dependsOn": [
         "[variables('resourceID').pubip01]",
-        "[variables('resourceID').vnet01]"
+        "[variables('resourceID').vnet01]",
+        "[variables('resourceID').asg01]"
       ],
       "location": "[variables('location')]",
       "tags": "[variables('tags')]",
@@ -284,6 +320,27 @@
       }
     },
     {
+      "type": "Microsoft.Compute/disks",
+      "apiVersion": "2019-07-01",
+      "name": "[variables('virtualMachines').vm01.dataDiskName03]",
+      "location": "[variables('location')]",
+      "properties": {
+        "osType": "Windows",
+        "diskIOPSReadWrite": 500,
+        "diskMBpsReadWrite": 60,
+        "diskSizeGB": 256,
+        "creationData": {
+          "createOption": "Empty"
+        },
+        "encryption": {
+          "type": "EncryptionAtRestWithPlatformKey"
+        }
+      },
+      "sku": {
+        "name": "StandardSSD_LRS"
+      }
+    },
+    {
       "comments": "Virtual Machine",
       "name": "[variables('virtualMachines').vm01.name]",
       "type": "Microsoft.Compute/virtualMachines",
@@ -292,7 +349,8 @@
       "dependsOn": [
         "[variables('resourceID').nic01]",
         "[variables('resourceID').vm01dataDisk01]",
-        "[variables('resourceID').vm01dataDisk02]"
+        "[variables('resourceID').vm01dataDisk02]",
+        "[variables('resourceID').vm01dataDisk03]"
       ],
       "tags": "[variables('tags')]",
       "properties": {
@@ -307,13 +365,14 @@
           }
         },
         "hardwareProfile": {
-          "vmSize": "Standard_F2"
+          "vmSize": "Standard_DS2_v2"
         },
         "storageProfile": {
           "imageReference": {
-            "publisher": "MicrosoftWindowsServer",
-            "offer": "WindowsServer",
-            "sku": "2019-Datacenter",
+            "publisher": "MicrosoftSQLServer",
+            // az vm image list-offers -l eastus -p MicrosoftSQLServer -o table
+            "offer": "sql2019-ws2019",
+            "sku": "standard",
             "version": "latest"
           },
           "osDisk": {
@@ -346,6 +405,15 @@
               },
               "createOption": "Attach",
               "caching": "ReadWrite"
+            },
+            {
+              "lun": 2,
+              "name": "[variables('virtualMachines').vm01.dataDiskName03]",
+              "managedDisk": {
+                "id": "[variables('resourceID').vm01dataDisk03]"
+              },
+              "createOption": "Attach",
+              "caching": "ReadWrite"
             }
           ]
         },
@@ -365,6 +433,104 @@
             "storageUri": "[reference(variables('resourceID').storage01, '2019-06-01').primaryEndpoints['blob']]"
           }
         }
+      },
+      "resources": [
+        {
+          // SQL Server IaaS Agent 拡張機能追加
+          "type": "Microsoft.Compute/virtualMachines/extensions",
+          "apiVersion": "2020-06-01",
+          "name": "[variables('virtualMachines').vm01.SqlIaaSAgent]",
+          "location": "[variables('location')]",
+          "dependsOn": [
+            "[variables('resourceID').vm01]"
+          ],
+          "properties": {
+            "type": "SqlIaaSAgent",
+            "publisher": "Microsoft.SqlServer.Management",
+            // Get-AzVmImagePublisher -Location eastus | Get-AzVMExtensionImageType | Get-AzVMExtensionImage
+            "typeHandlerVersion": "2.0",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "AutoTelemetrySettings": {
+                "Region": "[variables('location')]"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "comments": "SQL Server on Virtual Machine",
+      // sqlVirtualMachines name is same as the virtual machine name provided on VirtualMachineResourceId property.
+      "name": "[variables('virtualMachines').vm01.name]",
+      "type": "Microsoft.SqlVirtualMachine/sqlVirtualMachines",
+      "apiVersion": "2017-03-01-preview",
+      "dependsOn": [
+        "[variables('resourceID').SqlIaaSAgent01]"
+      ],
+      "location": "[variables('location')]",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "virtualMachineResourceId": "[variables('resourceID').vm01]",
+        // sqlImageOffer is same as the Virtual Machine imageReference.
+        "sqlImageOffer": "sql2019-ws2019",
+        "sqlServerLicenseType": "PAYG",
+        "sqlManagement": "Full",  // required by autoBackupSettings,autoPatchingSettings
+        "sqlImageSku": "standard",
+        "autoPatchingSettings": {
+          "enable": true,
+          "dayOfWeek": "Monday",
+          "maintenanceWindowStartingHour": 1,  // int
+          "maintenanceWindowDuration": 60  // 30 - 180
+        },
+        "autoBackupSettings": {
+          // https://docs.microsoft.com/ja-jp/azure/azure-sql/virtual-machines/windows/automated-backup
+          // require storageAccountUrl & storageAccessKey
+          "enable": true,
+          "enableEncryption": false,
+          "backupScheduleType": "Manual",
+          "retentionPeriod": 7,
+          "backupSystemDbs": true,
+          "storageAccountUrl": "[reference(variables('resourceID').storage01, '2019-06-01').primaryEndpoints['blob']]",
+          "storageAccessKey": "[listKeys(variables('resourceID').storage01,'2019-06-01').keys[0].value]"
+          // "Manual" require the following
+          ,"fullBackupFrequency": "Daily", // or "Weekly"
+          "fullBackupStartTime": 18,
+          "fullBackupWindowHours": 2,
+          "logBackupFrequency": 30
+        },
+        "serverConfigurationsManagementSettings": {
+          "sqlConnectivityUpdateSettings": {
+            "connectivityType": "PRIVATE",
+            "port": 1433,
+            "sqlAuthUpdateUserName": "[variables('sqlVirtualMachines').sqlonvm01.sqlAuthUpdateUserName]",
+            "sqlAuthUpdatePassword": "[parameters('adminPassword')]"
+          }
+        },
+        "storageConfigurationSettings": {
+          "sqlDataSettings": {
+            "luns": [
+              0
+            ],
+            // Value cannot be null. Parameter name: path
+            // https://gitmemory.com/issue/terraform-providers/terraform-provider-azurerm/7481/686282403
+            "defaultFilePath": "F:\\MSsql\\Data"
+          },
+          "sqlLogSettings": {
+            "luns": [
+              1
+            ],
+            "defaultFilePath": "L:\\MSsql\\Logs"
+          },
+          "sqlTempDbSettings": {
+            "luns": [
+              2
+            ],
+            "defaultFilePath": "T:\\MSsql\\TempDB"
+          },
+          "diskConfigurationType": "NEW",
+          "storageWorkloadType": "GENERAL"
+        }
       }
     }
   ],
@@ -378,8 +544,9 @@
       "value": {
         "vm01": {
           "fqdn": "[reference(variables('resourceID').pubip01).dnsSettings.fqdn]",
-          "adminUsername": "[variables('virtualMachines').vm01.adminUsername]"
-        } 
+          "adminUsername": "[variables('virtualMachines').vm01.adminUsername]",
+          "sqlAuthUpdateUserName": "[variables('sqlVirtualMachines').sqlonvm01.sqlAuthUpdateUserName]"
+        }
       }
     }
   }

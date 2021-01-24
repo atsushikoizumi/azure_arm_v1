@@ -36,11 +36,12 @@ Do the following.
 # Environments
 $location          = "eastus"
 $ownerName         = "atsushi.koizumi"
-$serviceName       = Read-Host "dba"  # Define service name
-$environmentName   = Read-Host "dev/stg/prd"  # Define environment name
+$serviceName       = Read-Host "list: sqlvm        select"  # Define service name
+$environmentName   = Read-Host "list: dev/stg/prd  select"  # Define environment name
 $templateFile      = "$PSScriptRoot\$serviceName\azuredeploy.json"
 $prametersFile     = "$PSScriptRoot\$serviceName\$environmentName.parameters.json"
 $logfile           = "deployment.log"
+$AzKeyVaultName    = "armtemplatekey"
 $resourceGroupName = "$ownerName.$serviceName.$environmentName"
 
 ################
@@ -72,6 +73,16 @@ if (Test-Path -Path $prametersFile ) {
 Write-Host ""
 
 # deploy start
+# update my mobile ip address
+$request = Invoke-WebRequest https://www.cman.jp/network/support/go_access.cgi
+foreach( $line in $request.Content -split "`n" ){
+    if ($line.Contains("keyHostName=")){
+        $nowip = $line -split "'"
+    }
+}
+$Secret = ConvertTo-SecureString -String $nowip[1] -AsPlainText -Force
+Set-AzKeyVaultSecret -VaultName $AzKeyVaultName -Name mymobileip -SecretValue $Secret | Out-File -Append $logfile
+
 # create resource group
 try {
     $rgstate = Get-AzResourceGroup -Name $resourceGroupName
