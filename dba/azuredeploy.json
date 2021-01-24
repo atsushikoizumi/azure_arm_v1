@@ -337,24 +337,46 @@
             // Cannot attach an existing OS disk if the VM is created from a platform, user or a shared gallery image.
             "name": "[variables('virtualMachines').vm01.osDiskName]",
             "osType": "Linux",
-            "diskSizeGB": 127,
+            "diskSizeGB": 256,
             "caching": "ReadWrite",
             "createOption": "FromImage",
             "managedDisk": {
               "storageAccountType": "StandardSSD_LRS"
             }
           },
-          "dataDisks": [
-            // lsblk -o NAME,HCTL,SIZE,MOUNTPOINT | grep -i "sd"
-            // sudo parted /dev/sdc --script mklabel gpt mkpart xfspart xfs 0% 100%
-            // sudo mkfs.xfs /dev/sdc1
-            // sudo partprobe /dev/sdc1
-            // sudo mkdir /datadrive
-            // sudo mount /dev/sdc1 /datadrive
-            // sudo blkid
-            // sudo vi /etc/fstab
-            // UUID=d2655b5f-2ce2-4aa6-8361-d426ed0b1012 /datadrive   xfs   defaults,nofail   1   2
-            // lsblk -o NAME,HCTL,SIZE,MOUNTPOINT | grep -i "sd"
+          "dataDisks": [ 
+            /* 
+              [root]# parted /dev/sdb
+              (parted) p
+                  Number  Start   End     Size    File system  Name                  Flags
+                  14      1049kB  5243kB  4194kB                                     bios_grub
+                  15      5243kB  524MB   519MB   fat16        EFI System Partition  boot, esp
+                  1       525MB   1050MB  524MB   xfs
+                  2       1050MB  68.7GB  67.7GB                                     lvm
+              (parted) mkpart
+                  Partition name?  []? "Linux Filesystem"
+                  File system type?  [ext2]? xfs                                            
+                  Start? 68.7GB                                                             
+                  End? 100% 
+              (parted) p 
+                  Number  Start   End     Size    File system  Name                  Flags
+                  14      1049kB  5243kB  4194kB                                     bios_grub
+                  15      5243kB  524MB   519MB   fat16        EFI System Partition  boot, esp
+                  1       525MB   1050MB  524MB   xfs
+                  2       1050MB  68.7GB  67.7GB                                     lvm
+                  3       68.7GB  275GB   206GB   xfs          Linux Filesystem
+              [root]# parted /dev/sdc --script mklabel gpt mkpart xfspart xfs 0% 100%
+              [root]# mkfs.xfs /dev/sdc1
+              [root]# partprobe /dev/sdc1
+              [root]# pvcreate /dev/sdb3 /dev/sdc1
+              [root]# pvdisplay
+              [root]# vgextend rootvg /dev/sdb3
+              [root]# vgextend rootvg /dev/sdc1
+              [root]# vgdisplay
+              [root]# lvextend -L +200G /dev/rootvg/homelv
+              [root]# xfs_growfs /dev/mapper/rootvg-homelv
+              [root]# lsblk
+            */ 
             {
               "lun": 0,
               "name": "[variables('virtualMachines').vm01.dataDiskName01]",
