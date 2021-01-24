@@ -41,7 +41,7 @@ $environmentName   = Read-Host "list: dev/stg/prd  select"  # Define environment
 $templateFile      = "$PSScriptRoot\$serviceName\azuredeploy.json"
 $prametersFile     = "$PSScriptRoot\$serviceName\$environmentName.parameters.json"
 $logfile           = "deployment.log"
-$AzKeyVaultName    = "armtemplatekey"
+$azKeyVaultName    = "armtemplatekey"
 $resourceGroupName = "$ownerName.$serviceName.$environmentName"
 
 ################
@@ -81,7 +81,7 @@ foreach( $line in $request.Content -split "`n" ){
     }
 }
 $Secret = ConvertTo-SecureString -String $nowip[1] -AsPlainText -Force
-Set-AzKeyVaultSecret -VaultName $AzKeyVaultName -Name mymobileip -SecretValue $Secret | Out-File -Append $logfile
+Set-AzKeyVaultSecret -VaultName $azKeyVaultName -Name mymobileip -SecretValue $Secret | Out-File -Append $logfile
 
 # create resource group
 try {
