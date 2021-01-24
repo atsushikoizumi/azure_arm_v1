@@ -26,7 +26,6 @@ PSGallery                 Untrusted            https://www.powershellgallery.com
 Azure を操作するための Module をインストールします。
 ```
 PS > Install-Module -Name Az -Scope CurrentUser
-PS > Get-InstalledModule
 ```
 
 # 04. login
