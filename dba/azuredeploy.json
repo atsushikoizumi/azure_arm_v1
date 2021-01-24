@@ -337,7 +337,7 @@
             // Cannot attach an existing OS disk if the VM is created from a platform, user or a shared gallery image.
             "name": "[variables('virtualMachines').vm01.osDiskName]",
             "osType": "Linux",
-            "diskSizeGB": 256,
+            "diskSizeGB": 127,
             "caching": "ReadWrite",
             "createOption": "FromImage",
             "managedDisk": {
@@ -345,7 +345,16 @@
             }
           },
           "dataDisks": [
-            // start --> diskmgmt.msc (Disk Management wizard)
+            // lsblk -o NAME,HCTL,SIZE,MOUNTPOINT | grep -i "sd"
+            // sudo parted /dev/sdc --script mklabel gpt mkpart xfspart xfs 0% 100%
+            // sudo mkfs.xfs /dev/sdc1
+            // sudo partprobe /dev/sdc1
+            // sudo mkdir /datadrive
+            // sudo mount /dev/sdc1 /datadrive
+            // sudo blkid
+            // sudo vi /etc/fstab
+            // UUID=d2655b5f-2ce2-4aa6-8361-d426ed0b1012 /datadrive   xfs   defaults,nofail   1   2
+            // lsblk -o NAME,HCTL,SIZE,MOUNTPOINT | grep -i "sd"
             {
               "lun": 0,
               "name": "[variables('virtualMachines').vm01.dataDiskName01]",
