@@ -184,7 +184,7 @@
       "properties": {
         "securityRules": [
           {
-            "name": "myhome_nic01",
+            "name": "myhome_to_nic01",
             "properties": {
               "description": "Allow SSH from my home ip address",
               "direction": "Inbound",
@@ -202,7 +202,7 @@
             }
           },
           {
-            "name": "mymobile_nic01",
+            "name": "mymobile_to_nic01",
             "properties": {
               "description": "Allow RDP from my mobile ip address",
               "direction": "Inbound",
@@ -365,9 +365,8 @@
                   1       525MB   1050MB  524MB   xfs
                   2       1050MB  68.7GB  67.7GB                                     lvm
                   3       68.7GB  275GB   206GB   xfs          Linux Filesystem
-              [root]# parted /dev/sdc --script mklabel gpt mkpart xfspart xfs 0% 100%
-              [root]# mkfs.xfs /dev/sdc1
-              [root]# partprobe /dev/sdc1
+              [root]# parted /dev/sdb --script mklabel gpt mkpart lvmrootvg xfs 68.7GB  100%
+              [root]# parted /dev/sdc --script mklabel gpt mkpart lvmrootvg xfs 0% 100%
               [root]# pvcreate /dev/sdb3 /dev/sdc1
               [root]# pvdisplay
               [root]# vgextend rootvg /dev/sdb3

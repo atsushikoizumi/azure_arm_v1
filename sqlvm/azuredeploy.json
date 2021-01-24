@@ -191,7 +191,7 @@
       "properties": {
         "securityRules": [
           {
-            "name": "myhome_nic01",
+            "name": "myhome_to_nic01",
             "properties": {
               "description": "Allow RDP from my home ip address",
               "direction": "Inbound",
@@ -209,7 +209,7 @@
             }
           },
           {
-            "name": "mymobile_nic01",
+            "name": "mymobile_to_nic01",
             "properties": {
               "description": "Allow RDP from my mobile ip address",
               "direction": "Inbound",
