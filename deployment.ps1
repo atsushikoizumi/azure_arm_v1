@@ -143,10 +143,10 @@ if ($YesNo -eq "yes") {
         Out-File -Append $logfile
 
     # get deployment operetion
-    Get-AzResourceGroupDeploymentOperation `
-        -ResourceGroupName $resourceGroupName `
-        -DeploymentName "$serviceName-$environmentName-$Datetime" | `
-        Out-File -Append $logfile
+    #Get-AzResourceGroupDeploymentOperation `
+    #    -ResourceGroupName $resourceGroupName `
+    #    -DeploymentName "$serviceName-$environmentName-$Datetime" | `
+    #    Out-File -Append $logfile
 
     Write-Host ""
 } elseif ($YesNo -eq "no") {
