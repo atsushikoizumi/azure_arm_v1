@@ -403,7 +403,7 @@
       },
       "resources": [
         {
-          "name": "CustomScript",
+          "name": "installDBAtools",
           "type": "extensions",
           "location": "[variables('location')]",
           "apiVersion": "2019-03-01",
@@ -417,14 +417,13 @@
             "typeHandlerVersion": "2.1",
             "autoUpgradeMinorVersion": true,
             "settings": {
-              "fileUris": [
-                "https://raw.githubusercontent.com/atsushikoizumi/azure_arm_v1/master/dba/customscript.sh"
-              ] 
             },
             "protectedSettings": {
-              "commandToExecute": "sh customscript.sh",
-              "storageAccountName": "[variables('storageAccounts').storage01.name]",
-              "storageAccountKey": "[listKeys(variables('resourceID').storage01,'2019-06-01').keys[0].value]"
+              // https://docs.microsoft.com/en-us/azure/virtual-machines/extensions/custom-script-linux
+              "commandToExecute": "bash customscript.sh",
+              "fileUris": [
+                "https://raw.githubusercontent.com/atsushikoizumi/azure_arm_v1/master/dba/customscript.sh"
+              ]
             }
           }
         }
