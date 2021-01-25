@@ -307,6 +307,8 @@
           "computerName": "[variables('virtualMachines').vm01.computerName]",
           "adminUsername": "[variables('virtualMachines').vm01.adminUsername]",
           "adminPassword": "[parameters('adminPassword')]",
+          // https://docs.microsoft.com/ja-jp/azure/virtual-machines/extensions/agent-linux
+          // https://github.com/Azure/WALinuxAgent
           "linuxConfiguration": {
             "disablePasswordAuthentication": true,
             "ssh": {
@@ -325,12 +327,12 @@
         "storageProfile": {
           "imageReference": {
             // Get-AzVMImagePublisher -Location eastus | Out-File publisher.txt
-            "publisher": "RedHat",
-            // Get-AzVMImageOffer -Location eastus -PublisherName RedHat | Out-File offer.txt
-            "offer": "RHEL",
-            // Get-AzVMImageSku -Location eastus -PublisherName RedHat -Offer RHEL | Out-File sku.txt
-            "sku": "8.2",
-            // Get-AzVMImage -Location eastus -PublisherName RedHat -Offer RHEL -Skus 8.2 | Out-File version.txt
+            "publisher": "OpenLogic",
+            // Get-AzVMImageOffer -Location eastus -PublisherName OpenLogic | Out-File offer.txt
+            "offer": "CentOS",
+            // Get-AzVMImageSku -Location eastus -PublisherName OpenLogic -Offer CentOS | Out-File sku.txt
+            "sku": "7.4",
+            // Get-AzVMImage -Location eastus -PublisherName OpenLogic -Offer CentOS -Skus 7.4 | Out-File version.txt
             "version": "latest"
           },
           "osDisk": {
@@ -390,6 +392,7 @@
         "networkProfile": {
           "networkInterfaces": [
             {
+              // ssh-keygen -R dba-stg-vm01-b2aswtpvua6go.eastus.cloudapp.azure.com
               "properties": {
                 "primary": true
               },
@@ -397,7 +400,35 @@
             }
           ]
         }
-      }
+      },
+      "resources": [
+        {
+          "name": "CustomScript",
+          "type": "extensions",
+          "location": "[variables('location')]",
+          "apiVersion": "2019-03-01",
+          "dependsOn": [
+            "[variables('resourceID').vm01]"
+          ],
+          "tags": "[variables('tags')]",
+          "properties": {
+            "publisher": "Microsoft.Azure.Extensions",
+            "type": "CustomScript",
+            "typeHandlerVersion": "2.1",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "fileUris": [
+                "https://raw.githubusercontent.com/atsushikoizumi/azure_arm_v1/master/dba/customscript.sh"
+              ] 
+            },
+            "protectedSettings": {
+              "commandToExecute": "sh customscript.sh",
+              "storageAccountName": "[variables('storageAccounts').storage01.name]",
+              "storageAccountKey": "[listKeys(variables('resourceID').storage01,'2019-06-01').keys[0].value]"
+            }
+          }
+        }
+      ]
     }
   ],
   "outputs": {
