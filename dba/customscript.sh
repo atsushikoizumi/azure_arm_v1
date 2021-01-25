@@ -26,6 +26,7 @@ do
 done < ${SCRIPTDIR}/lsblk.txt
 
 # disck setting
+sgdisk -e /dev/${OSDISK}                                               >> $LOGFILE 2>&1
 lsblk                                                                  >> $LOGFILE 2>&1
 parted -s /dev/${OSDISK}   -- mkpart lvmrootvg xfs 68.7GB  100%        >> $LOGFILE 2>&1
 parted -s /dev/${DATADISK} -- mklabel gpt mkpart lvmrootvg xfs 0% 100% >> $LOGFILE 2>&1
@@ -61,16 +62,13 @@ yum install -y postgresql postgresql-server                            >> $LOGFI
 mkdir /opt/oracle                                                      >> $LOGFILE 2>&1
 curl https://download.oracle.com/otn_software/linux/instantclient/oracle-instantclient-basic-linuxx64.rpm -o /opt/oracle/oracle-instantclient-basic-linuxx64.rpm      >> $LOGFILE 2>&1
 curl https://download.oracle.com/otn_software/linux/instantclient/oracle-instantclient-sqlplus-linuxx64.rpm -o /opt/oracle/oracle-instantclient-sqlplus-linuxx64.rpm  >> $LOGFILE 2>&1
-curl https://download.oracle.com/otn_software/linux/instantclient/oracle-instantclient-odbc-linuxx64.rpm -o /opt/oracle/oracle-instantclient-odbc-linuxx64.rpm        >> $LOGFILE 2>&1
+sleep 5
 yum install -y /opt/oracle/oracle-instantclient-basic-linuxx64.rpm     >> $LOGFILE 2>&1
 yum install -y /opt/oracle/oracle-instantclient-sqlplus-linuxx64.rpm   >> $LOGFILE 2>&1
-yum install -y /opt/oracle/oracle-instantclient-odbc-linuxx64.rpm      >> $LOGFILE 2>&1
-touch /etc/odbc.ini                                                    >> $LOGFILE 2>&1
-/usr/lib/oracle/19.9/client64/bin/odbc_update_ini.sh "/"  "/usr/lib/oracle/19.9/client64/lib" "ORACLEODBCDRIVER" RDSORCL /etc/odbc.ini  >> $LOGFILE 2>&1
-odbcinst -i -d -f /etc/odbcinst.ini                                    >> $LOGFILE 2>&1
 echo 'export NLS_LANG=Japanese_Japan.AL32UTF8' >> /home/${USERNAME}/.bash_profile           >> $LOGFILE 2>&1
 
 ### sqlcmd
 curl https://packages.microsoft.com/config/rhel/8/prod.repo > /etc/yum.repos.d/msprod.repo  >> $LOGFILE 2>&1
-echo 'export PATH=$PATH:/opt/mssql-tools/bin' >> /home/${USERNAME}/.bash_profile            >> $LOGFILE 2>&1
+sleep 5
 ACCEPT_EULA=Y yum install -y mssql-tools                                                    >> $LOGFILE 2>&1
+echo 'export PATH=$PATH:/opt/mssql-tools/bin' >> /home/${USERNAME}/.bash_profile            >> $LOGFILE 2>&1
