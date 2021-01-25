@@ -1,60 +1,76 @@
 #!/bin/bash
 
 USERNAME=$1
+LOGFILE=/var/log/customscript.log
+SCRIPTDIR=$(cd $(dirname $0); pwd)
 
-touch /tmp/sample.txt
-whoami >> /tmp/sample.txt
-pwd >> /tmp/sample.txt
-echo "USERNAME=$USERNAME" >> /tmp/sample.txt
+# start
+touch $LOGFILE
+whoami                    >> $LOGFILE
+pwd                       >> $LOGFILE
+echo "USERNAME=$USERNAME" >> $LOGFILE
 
-parted /dev/sdb --script mklabel gpt mkpart lvmrootvg xfs 68.7GB  100%
-parted /dev/sdc --script mklabel gpt mkpart lvmrootvg xfs 0% 100%
-pvcreate /dev/sdb3 /dev/sdc1
-pvdisplay
-vgextend rootvg /dev/sdb3
-vgextend rootvg /dev/sdc1
-vgdisplay
-lvextend -L +200G /dev/rootvg/homelv
-xfs_growfs /dev/mapper/rootvg-homelv
-lsblk
+# Label name is different for each deployment.
+lsblk -o NAME,TYPE | grep disk > ${SCRIPTDIR}/lsblk.txt
+while read line || [ -n "${line}" ];
+do
+    array=(${line})
+    if [ "`df | grep -e "${array[0]}" | grep -e "boot"`" ]; then
+        echo "${array[0]} is os_disk."   >> $LOGFILE
+        OSDISK="${array[0]}"
+    fi
+    if [ ! "`df | grep -e "${array[0]}"`" ]; then
+        echo "${array[0]} is data_disk." >> $LOGFILE
+        DATADISK="${array[0]}"
+    fi
+done < ${SCRIPTDIR}/lsblk.txt
+
+# disck setting
+lsblk                                                                  >> $LOGFILE 2>&1
+parted -s /dev/${OSDISK}   -- mkpart lvmrootvg xfs 68.7GB  100%        >> $LOGFILE 2>&1
+parted -s /dev/${DATADISK} -- mklabel gpt mkpart lvmrootvg xfs 0% 100% >> $LOGFILE 2>&1
+lsblk                                                                  >> $LOGFILE 2>&1
+pvcreate /dev/${OSDISK}3 /dev/${DATADISK}1                             >> $LOGFILE 2>&1
+vgextend rootvg /dev/${OSDISK}3                                        >> $LOGFILE 2>&1
+vgextend rootvg /dev/${DATADISK}1                                      >> $LOGFILE 2>&1
+lvextend -L +200G /dev/rootvg/homelv                                   >> $LOGFILE 2>&1
+xfs_growfs /dev/mapper/rootvg-homelv                                   >> $LOGFILE 2>&1
+lsblk                                                                  >> $LOGFILE 2>&1
+pvdisplay                                                              >> $LOGFILE 2>&1
+vgdisplay                                                              >> $LOGFILE 2>&1
 
 ### yum update
-yum update -y
+yum update -y                                                          >> $LOGFILE 2>&1
 
 ### jst
-sed -ie 's/ZONE=\"UTC\"/ZONE=\"Asia\/Tokyo\"/g' /etc/sysconfig/clock
-sed -ie 's/UTC=true/UTC=false/g' /etc/sysconfig/clock
-ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
+sed -ie 's/ZONE=\"UTC\"/ZONE=\"Asia\/Tokyo\"/g' /etc/sysconfig/clock   >> $LOGFILE 2>&1
+sed -ie 's/UTC=true/UTC=false/g' /etc/sysconfig/clock                  >> $LOGFILE 2>&1
+ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime                   >> $LOGFILE 2>&1
 
 ### locale
-sed -ie 's/en_US\.UTF-8/ja_JP\.UTF-8/g' /etc/sysconfig/i18n
+sed -ie 's/en_US\.UTF-8/ja_JP\.UTF-8/g' /etc/sysconfig/i18n            >> $LOGFILE 2>&1
 
 ### mysql
-yum install -y https://dev.mysql.com/get/mysql80-community-release-el7-3.noarch.rpm
-yum install -y yum-utils
-yum-config-manager --disable mysql80-community
-yum-config-manager --enable mysql57-community
-yum install -y mysql-community-client
+yum install -y mysql                                                   >> $LOGFILE 2>&1
+yum install -y mysql-server                                            >> $LOGFILE 2>&1
 
 ### psql
-rpm -ivh --nodeps https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
-sed -i "s/\$releasever/7/g" "/etc/yum.repos.d/pgdg-redhat-all.repo"
-yum install -y postgresql12
+yum install -y postgresql postgresql-server                            >> $LOGFILE 2>&1
 
 ### sqlplus & odbc
-mkdir /opt/oracle
-curl https://download.oracle.com/otn_software/linux/instantclient/oracle-instantclient-basic-linuxx64.rpm -o /opt/oracle/oracle-instantclient-basic-linuxx64.rpm
-curl https://download.oracle.com/otn_software/linux/instantclient/oracle-instantclient-sqlplus-linuxx64.rpm -o /opt/oracle/oracle-instantclient-sqlplus-linuxx64.rpm
-curl https://download.oracle.com/otn_software/linux/instantclient/oracle-instantclient-odbc-linuxx64.rpm -o /opt/oracle/oracle-instantclient-odbc-linuxx64.rpm
-yum install -y /opt/oracle/oracle-instantclient-basic-linuxx64.rpm
-yum install -y /opt/oracle/oracle-instantclient-sqlplus-linuxx64.rpm
-yum install -y /opt/oracle/oracle-instantclient-odbc-linuxx64.rpm
-touch /etc/odbc.ini
-/usr/lib/oracle/19.9/client64/bin/odbc_update_ini.sh "/"  "/usr/lib/oracle/19.9/client64/lib" "ORACLEODBCDRIVER" RDSORCL /etc/odbc.ini
-odbcinst -i -d -f /etc/odbcinst.ini
-echo 'export NLS_LANG=Japanese_Japan.AL32UTF8' >> /home/${USERNAME}/.bash_profile
+mkdir /opt/oracle                                                      >> $LOGFILE 2>&1
+curl https://download.oracle.com/otn_software/linux/instantclient/oracle-instantclient-basic-linuxx64.rpm -o /opt/oracle/oracle-instantclient-basic-linuxx64.rpm      >> $LOGFILE 2>&1
+curl https://download.oracle.com/otn_software/linux/instantclient/oracle-instantclient-sqlplus-linuxx64.rpm -o /opt/oracle/oracle-instantclient-sqlplus-linuxx64.rpm  >> $LOGFILE 2>&1
+curl https://download.oracle.com/otn_software/linux/instantclient/oracle-instantclient-odbc-linuxx64.rpm -o /opt/oracle/oracle-instantclient-odbc-linuxx64.rpm        >> $LOGFILE 2>&1
+yum install -y /opt/oracle/oracle-instantclient-basic-linuxx64.rpm     >> $LOGFILE 2>&1
+yum install -y /opt/oracle/oracle-instantclient-sqlplus-linuxx64.rpm   >> $LOGFILE 2>&1
+yum install -y /opt/oracle/oracle-instantclient-odbc-linuxx64.rpm      >> $LOGFILE 2>&1
+touch /etc/odbc.ini                                                    >> $LOGFILE 2>&1
+/usr/lib/oracle/19.9/client64/bin/odbc_update_ini.sh "/"  "/usr/lib/oracle/19.9/client64/lib" "ORACLEODBCDRIVER" RDSORCL /etc/odbc.ini  >> $LOGFILE 2>&1
+odbcinst -i -d -f /etc/odbcinst.ini                                    >> $LOGFILE 2>&1
+echo 'export NLS_LANG=Japanese_Japan.AL32UTF8' >> /home/${USERNAME}/.bash_profile           >> $LOGFILE 2>&1
 
 ### sqlcmd
-curl https://packages.microsoft.com/config/rhel/8/prod.repo > /etc/yum.repos.d/msprod.repo
-echo 'export PATH=$PATH:/opt/mssql-tools/bin' >> /home/${USERNAME}/.bash_profile
-ACCEPT_EULA=Y yum install -y mssql-tools
+curl https://packages.microsoft.com/config/rhel/8/prod.repo > /etc/yum.repos.d/msprod.repo  >> $LOGFILE 2>&1
+echo 'export PATH=$PATH:/opt/mssql-tools/bin' >> /home/${USERNAME}/.bash_profile            >> $LOGFILE 2>&1
+ACCEPT_EULA=Y yum install -y mssql-tools                                                    >> $LOGFILE 2>&1
