@@ -34,6 +34,9 @@
               },
               "secretName": "adminpassword"
           }
-      }
+      },
+      "publicSshKeyID": {
+        "value": "/subscriptions/71e0001a-0944-4a79-a3ec-5db6b44ab936/resourceGroups/ATSUSHI.KOIZUMI.DATA/providers/Microsoft.Compute/sshPublicKeys/sshkey"
+    }
   }
 }
