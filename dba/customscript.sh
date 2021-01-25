@@ -34,7 +34,7 @@ lsblk                                                                  >> $LOGFI
 pvcreate /dev/${OSDISK}3 /dev/${DATADISK}1                             >> $LOGFILE 2>&1
 vgextend rootvg /dev/${OSDISK}3                                        >> $LOGFILE 2>&1
 vgextend rootvg /dev/${DATADISK}1                                      >> $LOGFILE 2>&1
-lvextend -L +200G /dev/rootvg/homelv                                   >> $LOGFILE 2>&1
+lvextend -L +100G /dev/rootvg/homelv                                   >> $LOGFILE 2>&1
 xfs_growfs /dev/mapper/rootvg-homelv                                   >> $LOGFILE 2>&1
 lsblk                                                                  >> $LOGFILE 2>&1
 pvdisplay                                                              >> $LOGFILE 2>&1

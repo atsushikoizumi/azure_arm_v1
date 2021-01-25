@@ -276,10 +276,10 @@
       "name": "[variables('virtualMachines').vm01.dataDiskName01]",
       "location": "[variables('location')]",
       "properties": {
-        "osType": "Windows",
+        "osType": "Linux",
         "diskIOPSReadWrite": 500,
         "diskMBpsReadWrite": 60,
-        "diskSizeGB": 256,
+        "diskSizeGB": 128,
         "creationData": {
           "createOption": "Empty"
         },
@@ -325,19 +325,19 @@
         "storageProfile": {
           "imageReference": {
             // Get-AzVMImagePublisher -Location eastus | Out-File publisher.txt
-            "publisher": "RedHat",
-            // Get-AzVMImageOffer -Location eastus -PublisherName RedHat | Out-File offer.txt
-            "offer": "RHEL",
-            // Get-AzVMImageSku -Location eastus -PublisherName RedHat -Offer RHEL | Out-File sku.txt
-            "sku": "8.2",
-            // Get-AzVMImage -Location eastus -PublisherName RedHat -Offer RHEL -Skus 7.4 | Out-File version.txt
+            "publisher": "OpenLogic",
+            // Get-AzVMImageOffer -Location eastus -PublisherName OpenLogic | Out-File offer.txt
+            "offer": "CentOS",
+            // Get-AzVMImageSku -Location eastus -PublisherName OpenLogic -Offer CentOS | Out-File sku.txt
+            "sku": "8_3",
+            // Get-AzVMImage -Location eastus -PublisherName OpenLogic -Offer CentOS -Skus 8_3 | Out-File version.txt
             "version": "latest"
           },
           "osDisk": {
             // Cannot attach an existing OS disk if the VM is created from a platform, user or a shared gallery image.
             "name": "[variables('virtualMachines').vm01.osDiskName]",
             "osType": "Linux",
-            "diskSizeGB": 256,
+            "diskSizeGB": 127,
             "caching": "ReadWrite",
             "createOption": "FromImage",
             "managedDisk": {
@@ -372,7 +372,7 @@
               [root]# vgextend rootvg /dev/sdb3
               [root]# vgextend rootvg /dev/sdc1
               [root]# vgdisplay
-              [root]# lvextend -L +200G /dev/rootvg/homelv
+              [root]# lvextend -L +100G /dev/rootvg/homelv
               [root]# xfs_growfs /dev/mapper/rootvg-homelv
               [root]# lsblk
             */ 
