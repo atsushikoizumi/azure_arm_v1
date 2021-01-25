@@ -45,12 +45,12 @@ echo "USERNAME=$USERNAME" >> $LOGFILE
 yum update -y                                                          >> $LOGFILE 2>&1
 
 ### jst
-sed -ie 's/ZONE=\"UTC\"/ZONE=\"Asia\/Tokyo\"/g' /etc/sysconfig/clock   >> $LOGFILE 2>&1
-sed -ie 's/UTC=true/UTC=false/g' /etc/sysconfig/clock                  >> $LOGFILE 2>&1
-ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime                   >> $LOGFILE 2>&1
+sed -ie 's/ZONE=\"UTC\"/ZONE=\"Asia\/Tokyo\"/g' /etc/sysconfig/clock
+sed -ie 's/UTC=true/UTC=false/g' /etc/sysconfig/clock
+ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
 
 ### locale
-sed -ie 's/en_US\.UTF-8/ja_JP\.UTF-8/g' /etc/sysconfig/i18n            >> $LOGFILE 2>&1
+sed -ie 's/en_US\.UTF-8/ja_JP\.UTF-8/g' /etc/sysconfig/i18n
 
 ### mysql
 yum install -y mysql                                                   >> $LOGFILE 2>&1
@@ -61,13 +61,13 @@ yum install -y postgresql postgresql-server                            >> $LOGFI
 
 ### sqlplus & odbc
 mkdir /opt/oracle                                                      >> $LOGFILE 2>&1
-curl https://download.oracle.com/otn_software/linux/instantclient/oracle-instantclient-basic-linuxx64.rpm -o /opt/oracle/oracle-instantclient-basic-linuxx64.rpm      >> $LOGFILE 2>&1
-curl https://download.oracle.com/otn_software/linux/instantclient/oracle-instantclient-sqlplus-linuxx64.rpm -o /opt/oracle/oracle-instantclient-sqlplus-linuxx64.rpm  >> $LOGFILE 2>&1
+curl https://download.oracle.com/otn_software/linux/instantclient/oracle-instantclient-basic-linuxx64.rpm -o /opt/oracle/oracle-instantclient-basic-linuxx64.rpm
+curl https://download.oracle.com/otn_software/linux/instantclient/oracle-instantclient-sqlplus-linuxx64.rpm -o /opt/oracle/oracle-instantclient-sqlplus-linuxx64.rpm
 yum install -y /opt/oracle/oracle-instantclient-basic-linuxx64.rpm     >> $LOGFILE 2>&1
 yum install -y /opt/oracle/oracle-instantclient-sqlplus-linuxx64.rpm   >> $LOGFILE 2>&1
-echo 'export NLS_LANG=Japanese_Japan.AL32UTF8' >> /home/${USERNAME}/.bash_profile           >> $LOGFILE 2>&1
+echo 'export NLS_LANG=Japanese_Japan.AL32UTF8' >> /home/${USERNAME}/.bash_profile
 
 ### sqlcmd
-curl https://packages.microsoft.com/config/rhel/8/prod.repo -o /etc/yum.repos.d/msprod.repo >> $LOGFILE 2>&1
-ACCEPT_EULA=Y yum install -y mssql-tools                                                    >> $LOGFILE 2>&1
-echo 'export PATH=$PATH:/opt/mssql-tools/bin' >> /home/${USERNAME}/.bash_profile            >> $LOGFILE 2>&1
+curl https://packages.microsoft.com/config/rhel/8/prod.repo -o /etc/yum.repos.d/msprod.repo 
+ACCEPT_EULA=Y yum install -y mssql-tools                               >> $LOGFILE 2>&1
+echo 'export PATH=$PATH:/opt/mssql-tools/bin'  >> /home/${USERNAME}/.bash_profile

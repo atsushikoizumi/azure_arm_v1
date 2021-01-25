@@ -97,8 +97,7 @@
         "name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-vm01')]",
         "computerName": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-vm01')]",
         "adminUsername": "[concat(parameters('serviceName'),parameters('environmentName'),'vm01','admin')]",
-        "osDiskName": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-vm01-osDisk')]",
-        "dataDiskName01": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-vm01-dataDisk01')]"
+        "osDiskName": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-vm01-osDisk')]"
       }
     },
     // resourceID() は以下に全て記述する。
@@ -112,8 +111,7 @@
       "nsg01": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('networkSecurityGroups').sg01.name)]",
       "nic01": "[resourceId('Microsoft.Network/networkInterfaces',variables('networkInterfaces').nic01.name)]",
       "storage01": "[resourceId('Microsoft.Storage/storageAccounts',variables('storageAccounts').storage01.name)]",
-      "vm01": "[resourceId('Microsoft.Compute/virtualMachines',variables('virtualMachines').vm01.name)]",
-      "vm01dataDisk01": "[resourceId('Microsoft.Compute/disks',variables('virtualMachines').vm01.dataDiskName01)]"
+      "vm01": "[resourceId('Microsoft.Compute/virtualMachines',variables('virtualMachines').vm01.name)]"
     }
   },
   "resources": [
@@ -259,47 +257,13 @@
       }
     },
     {
-      "comments": "Storage Account",
-      "type": "Microsoft.Storage/storageAccounts",
-      "name": "[variables('storageAccounts').storage01.name]",
-      "apiVersion": "2019-06-01",
-      "location": "[variables('location')]",
-      "sku": {
-        "name": "Standard_LRS"
-      },
-      "kind": "StorageV2",
-      "tags": "[variables('tags')]"
-    },
-    {
-      "type": "Microsoft.Compute/disks",
-      "apiVersion": "2019-07-01",
-      "name": "[variables('virtualMachines').vm01.dataDiskName01]",
-      "location": "[variables('location')]",
-      "properties": {
-        "osType": "Linux",
-        "diskIOPSReadWrite": 500,
-        "diskMBpsReadWrite": 60,
-        "diskSizeGB": 128,
-        "creationData": {
-          "createOption": "Empty"
-        },
-        "encryption": {
-          "type": "EncryptionAtRestWithPlatformKey"
-        }
-      },
-      "sku": {
-        "name": "StandardSSD_LRS"
-      }
-    },
-    {
       "comments": "Virtual Machine",
       "name": "[variables('virtualMachines').vm01.name]",
       "type": "Microsoft.Compute/virtualMachines",
       "apiVersion": "2019-07-01",
       "location": "[variables('location')]",
       "dependsOn": [
-        "[variables('resourceID').nic01]",
-        "[variables('resourceID').vm01dataDisk01]"
+        "[variables('resourceID').nic01]"
       ],
       "tags": "[variables('tags')]",
       "properties": {
@@ -343,7 +307,7 @@
             "managedDisk": {
               "storageAccountType": "StandardSSD_LRS"
             }
-          },
+          }/*,
           "dataDisks": [ 
             /* 
               [root]# parted /dev/sdb
@@ -375,7 +339,7 @@
               [root]# lvextend -L +100G /dev/rootvg/homelv
               [root]# xfs_growfs /dev/mapper/rootvg-homelv
               [root]# lsblk
-            */ 
+             
             {
               "lun": 0,
               "name": "[variables('virtualMachines').vm01.dataDiskName01]",
@@ -385,7 +349,7 @@
               "createOption": "Attach",
               "caching": "ReadWrite"
             }
-          ]
+          ]*/
         },
         "networkProfile": {
           "networkInterfaces": [
