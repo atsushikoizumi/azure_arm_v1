@@ -37,6 +37,13 @@
       "metadata": {
         "description": "Define Password"
       }
+    },
+    "sqlDatabase01Flag": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "descroption": "Do you start The Database?"
+      }
     }
   },
   "variables": {
@@ -104,6 +111,17 @@
         "sqlAuthUpdateUserName" : "[concat(parameters('serviceName'),parameters('environmentName'),'sqladmin')]"
       }
     },
+    "sqlServers": {
+      "sqlServer01": {
+        "name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-sqlsv01')]",
+        "administratorLogin": "[concat(parameters('serviceName'),parameters('environmentName'),'sqladmin')]"
+      }
+    },
+    "sqlDatabases": {
+      "sqlDatabase01": {
+        "name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-sqldb01')]"
+      }
+    },
     // resourceID() は以下に全て記述する。
     // outputs で resourceID をそのまま object 形式で出力する。
     // 各リソースで参照する場合は必ず dependsOn にも記述する。
@@ -120,7 +138,8 @@
       "vm01dataDisk02": "[resourceId('Microsoft.Compute/disks',variables('virtualMachines').vm01.dataDiskName02)]",
       "vm01dataDisk03": "[resourceId('Microsoft.Compute/disks',variables('virtualMachines').vm01.dataDiskName03)]",
       "SqlIaaSAgent01": "[resourceId('Microsoft.Compute/virtualMachines/extensions',variables('virtualMachines').vm01.name,'SqlIaasExtension')]",
-      "sqlonvm01": "[resourceId('Microsoft.SqlVirtualMachine/sqlVirtualMachines',variables('sqlVirtualMachines').sqlonvm01.name)]"
+      "sqlonvm01": "[resourceId('Microsoft.SqlVirtualMachine/sqlVirtualMachines',variables('sqlVirtualMachines').sqlonvm01.name)]",
+      "sqlsv01": "[resourceId('Microsoft.Sql/servers',variables('sqlServers').sqlServer01.name)]"
     }
   },
   "resources": [
@@ -532,6 +551,75 @@
           "storageWorkloadType": "GENERAL"
         }
       }
+    },
+    {
+      "name": "[variables('sqlServers').sqlServer01.name]",
+      "type": "Microsoft.Sql/servers",
+      "apiVersion": "2019-06-01-preview",
+      "location": "[variables('location')]",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "administratorLogin": "[variables('sqlServers').sqlServer01.administratorLogin]",
+        "administratorLoginPassword": "[parameters('adminPassword')]",
+        "version": "12.0",
+        "minimalTlsVersion": "1.2",
+        // Unable to set Deny Public Network Access to Yes since there is no private endpoint enabled to access the server. 
+        "publicNetworkAccess": "Enabled"
+      },
+      "resources": [
+        {
+          // Allow Azure services and resources to access this server
+          // https://docs.microsoft.com/ja-jp/azure/azure-resource-manager/templates/error-invalid-template
+          "name": "[concat(variables('sqlServers').sqlServer01.name,'/rule00')]",
+          "type": "Microsoft.Sql/servers/firewallRules",
+          "apiVersion": "2015-05-01-preview",
+          "properties": {
+            "startIpAddress": "0.0.0.0",
+            "endIpAddress": "0.0.0.0"
+          },
+          "dependsOn": [
+            "[variables('resourceID').sqlsv01]"
+          ]
+        },
+        /*{
+          // Allow from vm01 public ip address.
+          "name": "[concat(variables('sqlServers').sqlServer01.name,'/rule01')]",
+          "type": "Microsoft.Sql/servers/firewallRules",
+          "apiVersion": "2015-05-01-preview",
+          "properties": {
+            "startIpAddress": "[reference(variables('resourceID').pubip01,'2020-05-01').ipAddress]",
+            "endIpAddress": "[reference(variables('resourceID').pubip01,'2020-05-01').ipAddress]"
+          },
+          "dependsOn": [
+            "[variables('resourceID').sqlsv01]"
+          ]
+        },*/
+        {
+          "condition": "[parameters('sqlDatabase01Flag')]",
+          "name": "[concat(variables('sqlServers').sqlServer01.name,'/',variables('sqlDatabases').sqlDatabase01.name)]",
+          "type": "Microsoft.Sql/servers/databases",
+          "apiVersion": "2020-08-01-preview",
+          "location": "[variables('location')]",
+          "tags": "[variables('tags')]",
+          "sku": {
+            // Get-AzSqlServerServiceObjective -Location eastus | Out-File sku.txt
+            "name": "Standard",
+            "tier": "Standard",
+            "capacity": 20
+          },
+          "properties": {
+            // https://docs.microsoft.com/ja-jp/sql/relational-databases/collations/collation-and-unicode-support
+            "collation": "SQL_Latin1_General_CP1_CI_AS",
+            // sample WideWorldImportersFull is not supported in Standard edition.
+            "sampleName": "AdventureWorksLT",
+            "requestedServiceObjectiveName": "S1"
+          },
+          // Please add dependency explicitly using the 'dependsOn' syntax.
+          "dependsOn": [
+            "[variables('resourceID').sqlsv01]"
+          ]
+        }
+      ]
     }
   ],
   "outputs": {
@@ -545,7 +633,8 @@
         "vm01": {
           "fqdn": "[reference(variables('resourceID').pubip01).dnsSettings.fqdn]",
           "adminUsername": "[variables('virtualMachines').vm01.adminUsername]",
-          "sqlAuthUpdateUserName": "[variables('sqlVirtualMachines').sqlonvm01.sqlAuthUpdateUserName]"
+          "sqlAuthUpdateUserName": "[variables('sqlVirtualMachines').sqlonvm01.sqlAuthUpdateUserName]",
+          "administratorLogin": "[variables('sqlServers').sqlServer01.administratorLogin]"
         }
       }
     }
