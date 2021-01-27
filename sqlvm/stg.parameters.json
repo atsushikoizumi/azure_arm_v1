@@ -1,39 +1,46 @@
 {
-  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
-  "contentVersion": "1.0.0.0",
-  "parameters": {
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
       "ownerName": {
-          "value": "atsushi.koizumi"
+        "value": "atsushi.koizumi"
       },
       "serviceName": {
-          "value": "sqlvm"
+        "value": "sqlvm"
       },
       "environmentName": {
-          "value": "stg"
+        "value": "stg"
       },
       "myHomeIpAddress": {
         "reference": {
-            "keyVault": {
-                "id": "/subscriptions/71e0001a-0944-4a79-a3ec-5db6b44ab936/resourceGroups/atsushi.koizumi.data/providers/Microsoft.KeyVault/vaults/armtemplatekey"
-            },
-            "secretName": "myhomeip"
+          "keyVault": {
+            "id": "/subscriptions/71e0001a-0944-4a79-a3ec-5db6b44ab936/resourceGroups/atsushi.koizumi.data/providers/Microsoft.KeyVault/vaults/armtemplatekey"
+          },
+          "secretName": "myhomeip"
         }
       },
       "myMobileIpAddress": {
         "reference": {
-            "keyVault": {
-                "id": "/subscriptions/71e0001a-0944-4a79-a3ec-5db6b44ab936/resourceGroups/atsushi.koizumi.data/providers/Microsoft.KeyVault/vaults/armtemplatekey"
-            },
-            "secretName": "mymobileip"
+          "keyVault": {
+            "id": "/subscriptions/71e0001a-0944-4a79-a3ec-5db6b44ab936/resourceGroups/atsushi.koizumi.data/providers/Microsoft.KeyVault/vaults/armtemplatekey"
+          },
+          "secretName": "mymobileip"
         }
       },
       "adminPassword": {
-          "reference": {
-              "keyVault": {
-                  "id": "/subscriptions/71e0001a-0944-4a79-a3ec-5db6b44ab936/resourceGroups/atsushi.koizumi.data/providers/Microsoft.KeyVault/vaults/armtemplatekey"
-              },
-              "secretName": "adminpassword"
-          }
+        "reference": {
+          "keyVault": {
+            "id": "/subscriptions/71e0001a-0944-4a79-a3ec-5db6b44ab936/resourceGroups/atsushi.koizumi.data/providers/Microsoft.KeyVault/vaults/armtemplatekey"
+          },
+          "secretName": "adminpassword"
+        }
+      },
+      "sqlDatabase01Flag":{
+        "value": true
+      },
+      "sqlDatabase02Flag":{
+        "value": false
       }
+    }
   }
-}
+  
