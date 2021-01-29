@@ -36,7 +36,7 @@ Do the following.
 # Environments
 $location          = "eastus"
 $ownerName         = "atsushi.koizumi"
-$serviceName       = Read-Host "list: sqlvm/dba    select"  # Define service name
+$serviceName       = Read-Host "list: sql/psg    select"  # Define service name
 $environmentName   = Read-Host "list: dev/stg/prd  select"  # Define environment name
 $templateFile      = "$PSScriptRoot\$serviceName\azuredeploy.json"
 $prametersFile     = "$PSScriptRoot\$serviceName\$environmentName.parameters.json"
