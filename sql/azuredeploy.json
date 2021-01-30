@@ -68,15 +68,22 @@
         "subnet02": {
           "name": "subnet02",
           "prefix": "10.1.2.0/24"
+        },
+        "subnet03": {
+          "name": "subent03",
+          "prefix": "10.1.3.0/24"
         }
       }
     },
     "networkSecurityGroups": {
-      "sg01": {
-        "name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-sg01')]"
+      "nsg01": {
+        "name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-nsg01')]"
       },
-      "sg02": {
-        "name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-sg02')]"
+      "nsg02": {
+        "name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-nsg02')]"
+      },
+      "nsg03": {
+        "name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-nsg03')]"
       }
     },
     "publicIPAddresses": {
@@ -94,6 +101,10 @@
       "nic01": {
         "name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-nic01')]",
         "ipconf01name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-nic01-ipconf01')]"
+      },
+      "nic02": {
+        "name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-nic02')]",
+        "ipconf01name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-nic02-ipconf01')]"
       }
     },
     "storageAccounts": {
@@ -156,11 +167,14 @@
       "vnet01": "[resourceId('Microsoft.Network/virtualNetworks',variables('virtualNetworks').vnet01.name)]",
       "subnet01": "[resourceId('Microsoft.Network/virtualNetworks/subnets',variables('virtualNetworks').vnet01.name,variables('virtualNetworks').vnet01.subnet01.name)]",
       "subnet02": "[resourceId('Microsoft.Network/virtualNetworks/subnets',variables('virtualNetworks').vnet01.name,variables('virtualNetworks').vnet01.subnet02.name)]",
+      "subnet03": "[resourceId('Microsoft.Network/virtualNetworks/subnets',variables('virtualNetworks').vnet01.name,variables('virtualNetworks').vnet01.subnet03.name)]",
       "pubip01": "[resourceId('Microsoft.Network/publicIPAddresses',variables('publicIPAddresses').pubip01.name)]",
       "asg01": "[resourceId('Microsoft.Network/applicationSecurityGroups',variables('applicationSecurityGroups').asg01.name)]",
-      "nsg01": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('networkSecurityGroups').sg01.name)]",
-      "nsg02": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('networkSecurityGroups').sg02.name)]",
+      "nsg01": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('networkSecurityGroups').nsg01.name)]",
+      "nsg02": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('networkSecurityGroups').nsg02.name)]",
+      "nsg03": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('networkSecurityGroups').nsg03.name)]",
       "nic01": "[resourceId('Microsoft.Network/networkInterfaces',variables('networkInterfaces').nic01.name)]",
+      "nic02": "[resourceId('Microsoft.Network/networkInterfaces',variables('networkInterfaces').nic02.name)]",
       "storage01": "[resourceId('Microsoft.Storage/storageAccounts',variables('storageAccounts').storage01.name)]",
       "storage02": "[resourceId('Microsoft.Storage/storageAccounts',variables('storageAccounts').storage02.name)]",
       "roleAssignments": "[extensionResourceId(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccounts').storage02.name), 'Microsoft.Authorization/roleAssignments/', variables('roleAssignments').sqlServer02auditingSettings.name)]",
@@ -224,6 +238,19 @@
               "privateEndpointNetworkPolicies": "Enabled",
               "privateLinkServiceNetworkPolicies": "Enabled"
             }
+          },
+          {
+            "name": "[variables('virtualNetworks').vnet01.subnet03.name]",
+            "properties": {
+              "addressPrefix": "[variables('virtualNetworks').vnet01.subnet03.prefix]",
+              "networkSecurityGroup": {
+                "id": "[variables('resourceID').nsg03]"
+              },
+              // https://docs.microsoft.com/ja-jp/azure/private-link/disable-private-endpoint-network-policy
+              "privateEndpointNetworkPolicies": "Disabled",
+              // https://docs.microsoft.com/ja-jp/azure/private-link/disable-private-link-service-network-policy
+              "privateLinkServiceNetworkPolicies": "Disabled"
+            }
           }
         ]
       }
@@ -253,7 +280,7 @@
     },
     {
       "comments": "Network Security Group",
-      "name": "[variables('networkSecurityGroups').sg01.name]",
+      "name": "[variables('networkSecurityGroups').nsg01.name]",
       "type": "Microsoft.Network/networkSecurityGroups",
       "apiVersion": "2020-05-01",
       "dependsOn": [
@@ -286,7 +313,17 @@
     },
     {
       "comments": "Network Security Group",
-      "name": "[variables('networkSecurityGroups').sg02.name]",
+      "name": "[variables('networkSecurityGroups').nsg02.name]",
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2020-05-01",
+      "location": "[variables('location')]",
+      "tags": "[variables('tags')]",
+      "properties": {
+      }
+    },
+    {
+      "comments": "Network Security Group",
+      "name": "[variables('networkSecurityGroups').nsg03.name]",
       "type": "Microsoft.Network/networkSecurityGroups",
       "apiVersion": "2020-05-01",
       "location": "[variables('location')]",
@@ -320,6 +357,38 @@
               "publicIpAddress": {
                 "id": "[variables('resourceID').pubip01]"
               },
+              "applicationSecurityGroups": [
+                {
+                  "id": "[variables('resourceID').asg01]"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "comments": "Network Inerface",
+      "name": "[variables('networkInterfaces').nic02.name]",
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-05-01",
+      "dependsOn": [
+        "[variables('resourceID').vnet01]",
+        "[variables('resourceID').asg01]"
+      ],
+      "location": "[variables('location')]",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "[variables('networkInterfaces').nic02.ipconf01name]",
+            "properties": {
+              "primary": true,
+              "subnet": {
+                "id": "[variables('resourceID').subnet03]"
+              },
+              "privateIPAddressVersion": "IPv4",
+              "privateIPAllocationMethod": "Dynamic",
               "applicationSecurityGroups": [
                 {
                   "id": "[variables('resourceID').asg01]"
@@ -478,6 +547,7 @@
       "location": "[variables('location')]",
       "dependsOn": [
         "[variables('resourceID').nic01]",
+        "[variables('resourceID').nic02]",
         "[variables('resourceID').vm01dataDisk01]",
         "[variables('resourceID').vm01dataDisk02]",
         "[variables('resourceID').vm01dataDisk03]"
@@ -548,12 +618,20 @@
           ]
         },
         "networkProfile": {
+          // with a single network interface must be stop-deallocated before it can be updated to have multiple network interfaces and vice-versa. 
+          // (Code: AddingOrDeletingNetworkInterfacesOnARunningVirtualMachineNotSupported)
           "networkInterfaces": [
             {
               "properties": {
                 "primary": true
               },
               "id": "[variables('resourceID').nic01]"
+            },
+            {
+              "properties": {
+                "primary": false
+              },
+              "id": "[variables('resourceID').nic02]"
             }
           ]
         },
