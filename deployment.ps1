@@ -136,7 +136,7 @@ if ($YesNo -eq "yes") {
     New-AzResourceGroupDeployment `
         -Name "$serviceName-$environmentName-$Datetime" `
         -ResourceGroupName $resourceGroupName `
-        -Mode Complete `
+        -Mode Incremental `
         -Force `
         -TemplateFile $templateFile `
         -TemplateParameterFile $prametersFile | `
