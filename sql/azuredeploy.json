@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-  "contentVersion": "1.8.0.0",
+  "contentVersion": "1.8.1.0",
   "parameters": {
     "ownerName": {
       "type": "string",
@@ -112,6 +112,10 @@
       "nic02": {
         "name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-nic02')]",
         "ipconf01name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-nic02-ipconf01')]"
+      },
+      "nic03": {
+        "name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-nic03')]",
+        "ipconf01name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-nic03-ipconf01')]"
       }
     },
     "storageAccounts": {
@@ -209,6 +213,7 @@
       "nsg03": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('networkSecurityGroups').nsg03.name)]",
       "nic01": "[resourceId('Microsoft.Network/networkInterfaces',variables('networkInterfaces').nic01.name)]",
       "nic02": "[resourceId('Microsoft.Network/networkInterfaces',variables('networkInterfaces').nic02.name)]",
+      "nic03": "[resourceId('Microsoft.Network/networkInterfaces',variables('networkInterfaces').nic03.name)]",
       "storage01": "[resourceId('Microsoft.Storage/storageAccounts',variables('storageAccounts').storage01.name)]",
       "storage02": "[resourceId('Microsoft.Storage/storageAccounts',variables('storageAccounts').storage02.name)]",
       "roleAssignments": "[extensionResourceId(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccounts').storage02.name), 'Microsoft.Authorization/roleAssignments/', variables('roleAssignments').sqlServer02auditingSettings.name)]",
@@ -422,6 +427,38 @@
             "properties": {
               "primary": true,
               "subnet": {
+                "id": "[variables('resourceID').subnet02]"
+              },
+              "privateIPAddressVersion": "IPv4",
+              "privateIPAllocationMethod": "Dynamic",
+              "applicationSecurityGroups": [
+                {
+                  "id": "[variables('resourceID').asg01]"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "comments": "Network Inerface",
+      "name": "[variables('networkInterfaces').nic03.name]",
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-05-01",
+      "dependsOn": [
+        "[variables('resourceID').vnet01]",
+        "[variables('resourceID').asg01]"
+      ],
+      "location": "[variables('location')]",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "[variables('networkInterfaces').nic03.ipconf01name]",
+            "properties": {
+              "primary": true,
+              "subnet": {
                 "id": "[variables('resourceID').subnet03]"
               },
               "privateIPAddressVersion": "IPv4",
@@ -523,7 +560,7 @@
         "osType": "Windows",
         "diskIOPSReadWrite": 500,
         "diskMBpsReadWrite": 60,
-        "diskSizeGB": 256,
+        "diskSizeGB": 128,
         "creationData": {
           "createOption": "Empty"
         },
@@ -545,7 +582,7 @@
         "osType": "Windows",
         "diskIOPSReadWrite": 500,
         "diskMBpsReadWrite": 60,
-        "diskSizeGB": 256,
+        "diskSizeGB": 128,
         "creationData": {
           "createOption": "Empty"
         },
@@ -567,7 +604,7 @@
         "osType": "Windows",
         "diskIOPSReadWrite": 500,
         "diskMBpsReadWrite": 60,
-        "diskSizeGB": 256,
+        "diskSizeGB": 128,
         "creationData": {
           "createOption": "Empty"
         },
@@ -588,6 +625,7 @@
       "dependsOn": [
         "[variables('resourceID').nic01]",
         "[variables('resourceID').nic02]",
+        "[variables('resourceID').nic03]",
         "[variables('resourceID').vm01dataDisk01]",
         "[variables('resourceID').vm01dataDisk02]",
         "[variables('resourceID').vm01dataDisk03]"
@@ -672,6 +710,12 @@
                 "primary": false
               },
               "id": "[variables('resourceID').nic02]"
+            },
+            {
+              "properties": {
+                "primary": false
+              },
+              "id": "[variables('resourceID').nic03]"
             }
           ]
         },
