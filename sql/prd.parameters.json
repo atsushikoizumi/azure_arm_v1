@@ -32,6 +32,9 @@
     },
     "sqlDatabase02Flag":{
       "value": true
+    },
+    "sqlDatabase03Flag":{
+      "value": false
     }
   }
 }
