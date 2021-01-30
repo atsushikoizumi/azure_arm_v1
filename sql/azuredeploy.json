@@ -387,7 +387,8 @@
       },
       "resources": [
         {
-          "condition": "[parameters('sqlDatabase02Flag')]",
+          // https://github.com/Azure/azure-quickstart-templates/blob/master/201-sql-auditing-server-policy-to-blob-storage/azuredeploy.json
+          // https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/scope-extension-resources?tabs=azure-cli
           "type": "Microsoft.Storage/storageAccounts/providers/roleAssignments",
           "apiVersion": "2020-03-01-preview",
           "tags": "[variables('tags')]",
@@ -663,7 +664,6 @@
       }
     },
     {
-      "condition": "[parameters('sqlDatabase01Flag')]",
       "name": "[variables('sqlServers').sqlServer01.name]",
       "type": "Microsoft.Sql/servers",
       "apiVersion": "2019-06-01-preview",
@@ -679,7 +679,6 @@
       },
       "resources": [
         {
-          "condition": "[parameters('sqlDatabase01Flag')]",
           "name": "[concat(variables('sqlServers').sqlServer01.name,'/auditingSettings')]",
           "type": "Microsoft.Sql/servers/auditingSettings",
           "apiVersion": "2017-03-01-preview",
@@ -721,7 +720,6 @@
           ]
         },
         {
-          "condition": "[parameters('sqlDatabase01Flag')]",
           // Allow Azure services and resources to access this server
           "name": "[concat(variables('sqlServers').sqlServer01.name,'/rule00')]",
           "type": "Microsoft.Sql/servers/firewallRules",
@@ -774,7 +772,6 @@
       ]
     },
     {
-      "condition": "[parameters('sqlDatabase02Flag')]",
       "name": "[variables('sqlServers').sqlServer02.name]",
       "type": "Microsoft.Sql/servers",
       "apiVersion": "2019-06-01-preview",
@@ -829,7 +826,6 @@
           // https://github.com/MicrosoftDocs/azure-docs/issues/32068
           // https://github.com/Azure/azure-quickstart-templates/blob/master/201-sql-auditing-server-policy-to-blob-storage/azuredeploy.json
         {
-          "condition": "[parameters('sqlDatabase02Flag')]",
           "name": "[concat(variables('sqlServers').sqlServer02.name,'/auditingSettings')]",
           "type": "Microsoft.Sql/servers/auditingSettings",
           "apiVersion": "2017-03-01-preview",
@@ -873,7 +869,6 @@
           ]
         },
         {
-          "condition": "[parameters('sqlDatabase02Flag')]",
           "name": "[concat(variables('sqlServers').sqlServer02.name,'/',variables('virtualNetworks').vnet01.subnet02.name)]",
           "type": "Microsoft.Sql/servers/virtualNetworkRules",
           "apiVersion": "2015-05-01-preview",
@@ -902,7 +897,6 @@
       }
     },
     "sqlsv01": {
-      "condition": "[parameters('sqlDatabase01Flag')]",
       "type": "object",
       "value": {
         "fqdn": "[reference(variables('resourceID').sqlsv01,'2015-05-01-preview').fullyQualifiedDomainName]",
@@ -910,7 +904,6 @@
       }
     },
     "sqlsv02": {
-      "condition": "[parameters('sqlDatabase02Flag')]",
       "type": "object",
       "value": {
         "fqdn": "[reference(variables('resourceID').sqlsv02,'2015-05-01-preview').fullyQualifiedDomainName]",

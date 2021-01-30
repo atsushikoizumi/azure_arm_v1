@@ -28,10 +28,10 @@
       }
     },
     "sqlDatabase01Flag":{
-      "value": true
+      "value": false
     },
     "sqlDatabase02Flag":{
-      "value": true
+      "value": false
     }
   }
 }
