@@ -45,6 +45,13 @@
       "metadata": {
         "descroption": "Bihind the Virtual Network architecture"
       }
+    },
+    "sqlDatabase03Flag": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "descroption": "Private Link to the Virtual Network architecture"
+      }
     }
   },
   "variables": {
@@ -142,6 +149,10 @@
       "sqlServer02": {
         "name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-sqlsv02')]",
         "administratorLogin": "[concat(parameters('serviceName'),parameters('environmentName'),'sqlsv','admin')]"
+      },
+      "sqlServer03": {
+        "name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-sqlsv03')]",
+        "administratorLogin": "[concat(parameters('serviceName'),parameters('environmentName'),'sqlsv','admin')]"
       }
     },
     "sqlDatabases": {
@@ -150,6 +161,9 @@
       },
       "sqlDatabase02": {
         "name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-sqldb02')]"
+      },
+      "sqlDatabase03": {
+        "name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-sqldb03')]"
       }
     },
     "roleAssignments": {
@@ -158,6 +172,26 @@
         "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')]",
         // The role assignment ID must be a GUID.
         "name": "[guid(resourceId('Microsoft.Storage/storageAccounts',variables('storageAccounts').storage02.name),resourceId('Microsoft.Sql/servers',variables('sqlServers').sqlServer02.name))]"
+      }
+    },
+    "privateEndpoints": {
+      "sqlsv03": {
+        "name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-edp-','sqlsv03')]"
+      }
+    },
+    "privateDnsZones": {
+      "priDnsZone": {
+        "name": "[concat('privatelink.',parameters('environmentName'),'.',parameters('serviceName'),'.windows.net')]"
+      }
+    },
+    "virtualNetworkLinks": {
+      "vnetlink01": {
+        "name": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-vnetlink01')]"
+      }
+    },
+    "privateDnsZoneGroups": {
+      "zone01": {
+        "name": "[concat(parameters('serviceName'),parameters('environmentName'),'zone01')]"
       }
     },
     // resourceID() は以下に全て記述する。
@@ -186,7 +220,10 @@
       "SqlIaaSAgent01": "[resourceId('Microsoft.Compute/virtualMachines/extensions',variables('virtualMachines').vm01.name,'SqlIaasExtension')]",
       "sqlvm01": "[resourceId('Microsoft.SqlVirtualMachine/sqlVirtualMachines',variables('sqlVirtualMachines').sqlvm01.name)]",
       "sqlsv01": "[resourceId('Microsoft.Sql/servers',variables('sqlServers').sqlServer01.name)]",
-      "sqlsv02": "[resourceId('Microsoft.Sql/servers',variables('sqlServers').sqlServer02.name)]"
+      "sqlsv02": "[resourceId('Microsoft.Sql/servers',variables('sqlServers').sqlServer02.name)]",
+      "sqlsv03": "[resourceId('Microsoft.Sql/servers',variables('sqlServers').sqlServer03.name)]",
+      "priEdpsqlsv03": "[resourceId('Microsoft.Network/privateEndpoints',variables('privateEndpoints').sqlsv03.name)]",
+      "priDnsZone": "[resourceId('Microsoft.Network/privateDnsZones',variables('privateDnsZones').priDnsZone.name)]"
     }
   },
   "resources": [
@@ -481,6 +518,7 @@
       "apiVersion": "2019-07-01",
       "name": "[variables('virtualMachines').vm01.dataDiskName01]",
       "location": "[variables('location')]",
+      "tags": "[variables('tags')]",
       "properties": {
         "osType": "Windows",
         "diskIOPSReadWrite": 500,
@@ -502,6 +540,7 @@
       "apiVersion": "2019-07-01",
       "name": "[variables('virtualMachines').vm01.dataDiskName02]",
       "location": "[variables('location')]",
+      "tags": "[variables('tags')]",
       "properties": {
         "osType": "Windows",
         "diskIOPSReadWrite": 500,
@@ -523,6 +562,7 @@
       "apiVersion": "2019-07-01",
       "name": "[variables('virtualMachines').vm01.dataDiskName03]",
       "location": "[variables('location')]",
+      "tags": "[variables('tags')]",
       "properties": {
         "osType": "Windows",
         "diskIOPSReadWrite": 500,
@@ -806,6 +846,7 @@
             "startIpAddress": "0.0.0.0",
             "endIpAddress": "0.0.0.0"
           },
+          "tags": "[variables('tags')]",
           "dependsOn": [
             "[variables('resourceID').sqlsv01]"
           ]
@@ -959,6 +1000,121 @@
           ]
         }
       ]
+    },
+    {
+      "name": "[variables('sqlServers').sqlServer03.name]",
+      "type": "Microsoft.Sql/servers",
+      "apiVersion": "2019-06-01-preview",
+      "location": "[variables('location')]",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "administratorLogin": "[variables('sqlServers').sqlServer03.administratorLogin]",
+        "administratorLoginPassword": "[parameters('adminPassword')]",
+        "version": "12.0",
+        "minimalTlsVersion": "1.2",
+        // Unable to set Deny Public Network Access to Yes since there is no private endpoint enabled to access the server. 
+        "publicNetworkAccess": "Disabled"
+      },
+      "resources": [
+        {
+          "condition": "[parameters('sqlDatabase03Flag')]",
+          "name": "[concat(variables('sqlServers').sqlServer03.name,'/',variables('sqlDatabases').sqlDatabase03.name)]",
+          "type": "Microsoft.Sql/servers/databases",
+          "apiVersion": "2020-08-01-preview",
+          "location": "[variables('location')]",
+          "tags": "[variables('tags')]",
+          "sku": {
+            // Get-AzSqlServerServiceObjective -Location eastus | Out-File sku.txt
+            "name": "Standard",
+            "tier": "Standard",
+            "capacity": 20
+          },
+          "properties": {
+            // https://docs.microsoft.com/ja-jp/sql/relational-databases/collations/collation-and-unicode-support
+            "collation": "SQL_Latin1_General_CP1_CI_AS",
+            // sample WideWorldImportersFull is not supported in Standard edition.
+            "sampleName": "AdventureWorksLT",
+            "requestedServiceObjectiveName": "S1"
+          },
+          "dependsOn": [
+            "[variables('resourceID').sqlsv03]"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Microsoft.Network/privateEndpoints",
+      "apiVersion": "2019-04-01",
+      "name": "[variables('privateEndpoints').sqlsv03.name]",
+      "location": "[variables('location')]",
+      "dependsOn": [
+        "[variables('resourceID').vm01]",
+        "[variables('resourceID').sqlsv03]"
+      ],
+      "tags": "[variables('tags')]",
+      "properties": {
+        "subnet": {
+          "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworks').vnet01.name, variables('virtualNetworks').vnet01.subnet03.name)]"
+        },
+        "privateLinkServiceConnections": [
+          {
+            "name": "[variables('privateEndpoints').sqlsv03.name]",
+            "properties": {
+              "privateLinkServiceId": "[variables('resourceID').sqlsv03]",
+              "groupIds": [
+                "sqlServer"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/privateDnsZones",
+      "apiVersion": "2018-09-01",
+      "name": "[variables('privateDnsZones').priDnsZone.name]",
+      "location": "global",
+      "tags": "[variables('tags')]",
+      "dependsOn": [
+        "[variables('resourceID').vnet01]"
+      ],
+      "properties": ""
+    },
+    {
+      "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+      "apiVersion": "2018-09-01",
+      "name": "[concat(variables('privateDnsZones').priDnsZone.name,'/',variables('virtualNetworkLinks').vnetlink01.name)]",
+      "location": "global",
+      "dependsOn": [
+        "[variables('resourceID').priDnsZone]",
+        "[variables('resourceID').vnet01]"
+      ],
+      "properties": {
+        "registrationEnabled": false,
+        "virtualNetwork": {
+          "id": "[variables('resourceID').vnet01]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+      "apiVersion": "2020-03-01",
+      "name": "[concat(variables('privateEndpoints').sqlsv03.name,'/',variables('privateDnsZoneGroups').zone01.name)]",
+      "location": "[variables('location')]",
+      "dependsOn": [
+        "[variables('resourceID').priDnsZone]",
+        "[variables('resourceID').priEdpsqlsv03]"
+      ],
+      "properties": {
+        "privateDnsZoneConfigs": [
+          {
+            "name": "config1",
+            "properties": {
+              "privateDnsZoneId": "[variables('resourceID').priDnsZone]"
+            }
+          }
+        ]
+      }
     }
   ],
   "outputs": {
@@ -986,6 +1142,13 @@
       "value": {
         "fqdn": "[reference(variables('resourceID').sqlsv02,'2015-05-01-preview').fullyQualifiedDomainName]",
         "administratorLogin": "[reference(variables('resourceID').sqlsv02,'2015-05-01-preview').administratorLogin]"
+      }
+    },
+    "sqlsv03": {
+      "type": "object",
+      "value": {
+        "fqdn": "[reference(variables('resourceID').sqlsv03,'2015-05-01-preview').fullyQualifiedDomainName]",
+        "administratorLogin": "[reference(variables('resourceID').sqlsv03,'2015-05-01-preview').administratorLogin]"
       }
     }
   }
