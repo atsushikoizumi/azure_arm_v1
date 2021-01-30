@@ -686,7 +686,7 @@
             "state": "Enabled",
             "storageEndpoint": "[reference(variables('resourceID').storage01, '2019-06-01').primaryEndpoints['blob']]",
             "storageAccountAccessKey": "[listKeys(variables('resourceID').storage01,'2019-06-01').keys[0].value]",
-            "retentionDays": 30,
+            "retentionDays": 30,  // 0 - 3285 days
             "auditActionsAndGroups": [
               "BATCH_COMPLETED_GROUP",
               "SUCCESSFUL_DATABASE_AUTHENTICATION_GROUP",
