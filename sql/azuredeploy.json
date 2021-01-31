@@ -176,6 +176,18 @@
         "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')]",
         // The role assignment ID must be a GUID.
         "name": "[guid(resourceId('Microsoft.Storage/storageAccounts',variables('storageAccounts').storage02.name),resourceId('Microsoft.Sql/servers',variables('sqlServers').sqlServer02.name))]"
+      },
+      "sqlServer03auditingSettings": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')]",
+        "name": "[guid(resourceId('Microsoft.Storage/storageAccounts',variables('storageAccounts').storage02.name),resourceId('Microsoft.Sql/servers',variables('sqlServers').sqlServer03.name))]"
+      },
+      "vm01storage01": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')]",
+        "name": "[guid(resourceId('Microsoft.Compute/virtualMachines',variables('virtualMachines').vm01.name),resourceId('Microsoft.Storage/storageAccounts',variables('storageAccounts').storage01.name))]"
+      },
+      "vm01storage02": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')]",
+        "name": "[guid(resourceId('Microsoft.Compute/virtualMachines',variables('virtualMachines').vm01.name),resourceId('Microsoft.Storage/storageAccounts',variables('storageAccounts').storage02.name))]"
       }
     },
     "privateEndpoints": {
@@ -185,7 +197,7 @@
     },
     "privateDnsZones": {
       "priDnsZone": {
-        "name": "[concat('privatelink.',parameters('environmentName'),'.',parameters('serviceName'),'.windows.net')]"
+        "name": "privatelink.database.windows.net"
       }
     },
     "virtualNetworkLinks": {
@@ -216,8 +228,9 @@
       "nic03": "[resourceId('Microsoft.Network/networkInterfaces',variables('networkInterfaces').nic03.name)]",
       "storage01": "[resourceId('Microsoft.Storage/storageAccounts',variables('storageAccounts').storage01.name)]",
       "storage02": "[resourceId('Microsoft.Storage/storageAccounts',variables('storageAccounts').storage02.name)]",
-      "roleAssignments": "[extensionResourceId(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccounts').storage02.name), 'Microsoft.Authorization/roleAssignments/', variables('roleAssignments').sqlServer02auditingSettings.name)]",
-      //"roleAssignments01": "[resourceId('Microsoft.Authorization/roleAssignments',variables('roleAssignments').sqlServer02auditingSettings.name)]",
+      "roleAssignments01": "[extensionResourceId(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccounts').storage02.name), 'Microsoft.Authorization/roleAssignments/', variables('roleAssignments').sqlServer02auditingSettings.name)]",
+      "roleAssignments02": "[extensionResourceId(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccounts').storage02.name), 'Microsoft.Authorization/roleAssignments/', variables('roleAssignments').sqlServer03auditingSettings.name)]",
+      "roleAssignments03": "[extensionResourceId(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccounts').storage02.name), 'Microsoft.Authorization/roleAssignments/', variables('roleAssignments').vm01storage02.name)]",
       "vm01": "[resourceId('Microsoft.Compute/virtualMachines',variables('virtualMachines').vm01.name)]",
       "vm01dataDisk01": "[resourceId('Microsoft.Compute/disks',variables('virtualMachines').vm01.dataDiskName01)]",
       "vm01dataDisk02": "[resourceId('Microsoft.Compute/disks',variables('virtualMachines').vm01.dataDiskName02)]",
@@ -493,7 +506,25 @@
           "bypass": "AzureServices"
         }
       },
-      "tags": "[variables('tags')]"
+      "tags": "[variables('tags')]",
+      "resources": [
+        {
+          "type": "Microsoft.Storage/storageAccounts/providers/roleAssignments",
+          "apiVersion": "2020-03-01-preview",
+          "tags": "[variables('tags')]",
+          "name": "[concat(variables('storageAccounts').storage01.name, '/Microsoft.Authorization/', variables('roleAssignments').vm01storage01.name)]",
+          "dependsOn": [
+            "[variables('resourceID').vm01]",
+            "[variables('resourceID').storage01]"
+          ],
+          "properties": {
+            "roleDefinitionId": "[variables('roleAssignments').vm01storage01.roleDefinitionId]",
+            "principalId": "[reference(resourceId('Microsoft.Compute/virtualMachines',variables('virtualMachines').vm01.name), '2019-07-01', 'Full').identity.principalId]",
+            "scope": "[variables('resourceID').storage01]",
+            "principalType": "ServicePrincipal"
+          }
+        }
+      ]
     },
     {
       "comments": "Storage Account",
@@ -505,6 +536,9 @@
         "name": "Standard_LRS"
       },
       "kind": "StorageV2",
+      "dependsOn": [
+        "[variables('resourceID').vnet01]"
+      ],
       "tags": "[variables('tags')]",
       "properties": {
         "allowBlobPublicAccess": false,
@@ -545,6 +579,38 @@
             "principalId": "[reference(resourceId('Microsoft.Sql/servers', variables('sqlServers').sqlServer02.name), '2019-06-01-preview', 'Full').identity.principalId]",
             "scope": "[variables('resourceID').storage02]",
             // https://stackoverflow.com/questions/52340455/apply-azure-rbac-to-a-resource-using-arm
+            "principalType": "ServicePrincipal"
+          }
+        },
+        {
+          "type": "Microsoft.Storage/storageAccounts/providers/roleAssignments",
+          "apiVersion": "2020-03-01-preview",
+          "tags": "[variables('tags')]",
+          "name": "[concat(variables('storageAccounts').storage02.name, '/Microsoft.Authorization/', variables('roleAssignments').sqlServer03auditingSettings.name)]",
+          "dependsOn": [
+            "[variables('resourceID').sqlsv03]",
+            "[variables('resourceID').storage02]"
+          ],
+          "properties": {
+            "roleDefinitionId": "[variables('roleAssignments').sqlServer03auditingSettings.roleDefinitionId]",
+            "principalId": "[reference(resourceId('Microsoft.Sql/servers', variables('sqlServers').sqlServer03.name), '2019-06-01-preview', 'Full').identity.principalId]",
+            "scope": "[variables('resourceID').storage02]",
+            "principalType": "ServicePrincipal"
+          }
+        },
+        {
+          "type": "Microsoft.Storage/storageAccounts/providers/roleAssignments",
+          "apiVersion": "2020-03-01-preview",
+          "tags": "[variables('tags')]",
+          "name": "[concat(variables('storageAccounts').storage02.name, '/Microsoft.Authorization/', variables('roleAssignments').vm01storage02.name)]",
+          "dependsOn": [
+            "[variables('resourceID').vm01]",
+            "[variables('resourceID').storage02]"
+          ],
+          "properties": {
+            "roleDefinitionId": "[variables('roleAssignments').vm01storage02.roleDefinitionId]",
+            "principalId": "[reference(resourceId('Microsoft.Compute/virtualMachines',variables('virtualMachines').vm01.name), '2019-07-01', 'Full').identity.principalId]",
+            "scope": "[variables('resourceID').storage02]",
             "principalType": "ServicePrincipal"
           }
         }
@@ -630,6 +696,9 @@
         "[variables('resourceID').vm01dataDisk02]",
         "[variables('resourceID').vm01dataDisk03]"
       ],
+      "identity": {
+        "type": "SystemAssigned"
+      },
       "tags": "[variables('tags')]",
       "properties": {
         "osProfile": {
@@ -643,7 +712,7 @@
           }
         },
         "hardwareProfile": {
-          "vmSize": "Standard_DS2_v2"
+          "vmSize": "Standard_D3_v2"
         },
         "storageProfile": {
           "imageReference": {
@@ -890,7 +959,6 @@
             "startIpAddress": "0.0.0.0",
             "endIpAddress": "0.0.0.0"
           },
-          "tags": "[variables('tags')]",
           "dependsOn": [
             "[variables('resourceID').sqlsv01]"
           ]
@@ -952,6 +1020,19 @@
         "publicNetworkAccess": "Enabled"
       },
       "resources": [
+        {
+          // Allow Azure services and resources to access this server
+          "name": "[concat(variables('sqlServers').sqlServer02.name,'/rule00')]",
+          "type": "Microsoft.Sql/servers/firewallRules",
+          "apiVersion": "2015-05-01-preview",
+          "properties": {
+            "startIpAddress": "0.0.0.0",
+            "endIpAddress": "0.0.0.0"
+          },
+          "dependsOn": [
+            "[variables('resourceID').sqlsv02]"
+          ]
+        },
         {
           "condition": "[parameters('sqlDatabase02Flag')]",
           "name": "[concat(variables('sqlServers').sqlServer02.name,'/',variables('sqlDatabases').sqlDatabase02.name)]",
@@ -1028,7 +1109,7 @@
           "dependsOn": [
             "[variables('resourceID').sqlsv02]",
             "[variables('resourceID').storage02]",
-            "[variables('resourceID').roleAssignments]"
+            "[variables('resourceID').roleAssignments01]"
           ]
         },
         {
@@ -1051,6 +1132,9 @@
       "apiVersion": "2019-06-01-preview",
       "location": "[variables('location')]",
       "tags": "[variables('tags')]",
+      "identity": {
+        "type": "SystemAssigned"
+      },
       "properties": {
         "administratorLogin": "[variables('sqlServers').sqlServer03.administratorLogin]",
         "administratorLoginPassword": "[parameters('adminPassword')]",
@@ -1060,6 +1144,49 @@
         "publicNetworkAccess": "Disabled"
       },
       "resources": [
+        {
+          "name": "[concat(variables('sqlServers').sqlServer03.name,'/auditingSettings')]",
+          "type": "Microsoft.Sql/servers/auditingSettings",
+          "apiVersion": "2017-03-01-preview",
+          "properties": {
+            "state": "Enabled",
+            "storageEndpoint": "[reference(variables('resourceID').storage02, '2019-06-01').primaryEndpoints['blob']]",
+            //"storageAccountSubscriptionId": "[subscription().subscriptionId]",
+            "retentionDays": 30,
+            "auditActionsAndGroups": [
+              "BATCH_COMPLETED_GROUP",
+              "SUCCESSFUL_DATABASE_AUTHENTICATION_GROUP",
+              "FAILED_DATABASE_AUTHENTICATION_GROUP",
+              "APPLICATION_ROLE_CHANGE_PASSWORD_GROUP",
+              "BACKUP_RESTORE_GROUP",
+              "DATABASE_LOGOUT_GROUP",
+              "DATABASE_OBJECT_CHANGE_GROUP",
+              "DATABASE_OBJECT_OWNERSHIP_CHANGE_GROUP",
+              "DATABASE_OBJECT_PERMISSION_CHANGE_GROUP",
+              "DATABASE_OPERATION_GROUP",
+              "DATABASE_PERMISSION_CHANGE_GROUP",
+              "DATABASE_PRINCIPAL_CHANGE_GROUP",
+              "DATABASE_PRINCIPAL_IMPERSONATION_GROUP",
+              "DATABASE_ROLE_MEMBER_CHANGE_GROUP",
+              "FAILED_DATABASE_AUTHENTICATION_GROUP",
+              "SCHEMA_OBJECT_ACCESS_GROUP",
+              "SCHEMA_OBJECT_CHANGE_GROUP",
+              "SCHEMA_OBJECT_OWNERSHIP_CHANGE_GROUP",
+              "SCHEMA_OBJECT_PERMISSION_CHANGE_GROUP",
+              "SUCCESSFUL_DATABASE_AUTHENTICATION_GROUP",
+              "USER_CHANGE_PASSWORD_GROUP",
+              "BATCH_STARTED_GROUP",
+              "BATCH_COMPLETED_GROUP"
+            ],
+            "isStorageSecondaryKeyInUse": false,
+            "isAzureMonitorTargetEnabled": false
+          },
+          "dependsOn": [
+            "[variables('resourceID').sqlsv03]",
+            "[variables('resourceID').storage02]",
+            "[variables('resourceID').roleAssignments02]"
+          ]
+        },
         {
           "condition": "[parameters('sqlDatabase03Flag')]",
           "name": "[concat(variables('sqlServers').sqlServer03.name,'/',variables('sqlDatabases').sqlDatabase03.name)]",
