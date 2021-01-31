@@ -73,4 +73,27 @@ Get-AzResourceGroupDeploymentOperation `
   -DeploymentName ExampleDeployment-2
 ```
 
+# 09. allow data access priv to vm01 for storage account "armtemplatedrive"
+vm01 に対して armtemplatedrive への "Storage Blob Data Contributor" 権限を付与します。
+```
+$rgname = ”atsushi.koizumi.sql.dev”
+$vmname = ”sql-dev-vm01”
+$vmInfo = Get-AzVM -ResourceGroupName $rgname -Name $vmname
+$strage = Get-AzStorageAccount -ResourceGroupName "atsushi.koizumi.data" -StorageAccountName "armtemplatedrive"
+New-AzRoleAssignment `
+  -ObjectId $vmInfoPs.Identity.PrincipalId `
+  -Scope $strage.id `
+  -RoleDefinitionName "Storage Blob Data Contributor"
+```
+
+# 10. get exe-items from "armtemplatedrive" in vm01
+vm01 にログインして PowerShell で以下のコマンドを実行します。
+```
+Install-Module -Name Az -Scope CurrentUser
+Add-AzAccount -identity
+$contxt = New-AzStorageContext -StorageAccountName "armtemplatedrive"
+$contxt | Get-AzStorageBlob -Container "windows" | `
+ForEach-Object {$contxt | Get-AzStorageBlobContent -Blob $_.Name -Container "windows" -Destination "L:\work\"}
+```
+
 以上です。
