@@ -59,7 +59,7 @@ yum install -y mysql-server                                            >> $LOGFI
 ### psql
 yum install -y postgresql postgresql-server                            >> $LOGFILE 2>&1
 
-### sqlplus & odbc
+### sqlplus
 mkdir /opt/oracle                                                      >> $LOGFILE 2>&1
 curl https://download.oracle.com/otn_software/linux/instantclient/oracle-instantclient-basic-linuxx64.rpm -o /opt/oracle/oracle-instantclient-basic-linuxx64.rpm
 curl https://download.oracle.com/otn_software/linux/instantclient/oracle-instantclient-sqlplus-linuxx64.rpm -o /opt/oracle/oracle-instantclient-sqlplus-linuxx64.rpm

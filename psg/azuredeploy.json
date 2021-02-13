@@ -20,12 +20,6 @@
         "description": "Define Environment Name"
       }
     },
-    "myHomeIpAddress": {
-      "type": "string",
-      "metadata": {
-        "description": "Define My Home IP Address"
-      }
-    },
     "myMobileIpAddress": {
       "type": "string",
       "metadata": {
@@ -182,27 +176,9 @@
       "properties": {
         "securityRules": [
           {
-            "name": "myhome_to_nic01",
-            "properties": {
-              "description": "Allow SSH from my home ip address",
-              "direction": "Inbound",
-              "access": "Allow",
-              "priority": 1001,
-              "protocol": "Tcp",
-              "sourcePortRange": "*",
-              "sourceAddressPrefix": "[parameters('myHomeIpAddress')]",
-              "destinationPortRange": "22",
-              "destinationApplicationSecurityGroups": [
-                {
-                  "id": "[variables('resourceID').asg01]"
-                }
-              ]
-            }
-          },
-          {
             "name": "mymobile_to_nic01",
             "properties": {
-              "description": "Allow RDP from my mobile ip address",
+              "description": "Allow SSH from my mobile ip address",
               "direction": "Inbound",
               "access": "Allow",
               "priority": 1002,
@@ -382,7 +358,7 @@
             "autoUpgradeMinorVersion": true,
             "settings": {
               "fileUris": [
-                "https://raw.githubusercontent.com/atsushikoizumi/azure_arm_v1/master/dba/customscript.sh"
+                "https://raw.githubusercontent.com/atsushikoizumi/azure_arm_v1/master/psg/customscript.sh"
               ]
             },
             "protectedSettings": {
