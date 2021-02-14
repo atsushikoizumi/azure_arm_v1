@@ -1,8 +1,8 @@
-# Azure Infrastructure as Code
+## Azure Infrastructure as Code
 ARM Templete を使った Azure resource の deploy 方法を確認します。
 
 
-# 01. install powershell for mac
+### 01. install powershell for mac
 以下のコマンドで Mac に PowerShell をインストールできます。
 ```
 $ brew install openssl
@@ -11,7 +11,7 @@ $ brew install --cask powershell
 $ brew upgrade powershell --cask
 ```
 
-# 02. Set PSRepository
+### 02. Set PSRepository
 レポジトリを登録します。
 ```
 PS > Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
@@ -22,56 +22,71 @@ Name                      InstallationPolicy   SourceLocation
 PSGallery                 Untrusted            https://www.powershellgallery.com/api/v2
 ```
 
-# 03. Install Az Modules
+### 03. Install Az Modules
 Azure を操作するための Module をインストールします。
 ```
 PS > Install-Module -Name Az -Scope CurrentUser
 ```
 
-# 04. login
+### 04. login
 Azure にログインします。
 ```
 PS > Connect-AzAccount
 ```
 
-# 05. Create Resource Group
-テスト用のリソースグループを作成します。
+### 05. Set ownerName
+全てのリソース名を決定する環境変数を定義します。<br>
+[deployment.ps1]の以下の項目を編集してください。
 ```
-PS > New-AzResourceGroup -Name sample-rg01 -Location "East US"
-```
-
-# 05. Test ARM Templete
-作成したテンプレートをテストします。
-```
-PS > New-AzResourceGroupDeploymentWhatIfResult `
-  -Name ExampleDeployment `
-  -ResourceGroupName sample-rg01 `
-  -TemplateFile sample.json
+$ownerName         = "atsushi.koizumi"
 ```
 
-# 06. ARM Templete Deploy
-テンプレートをデプロイします。
+この "$ownerName" は、リソースグループ名の prefix となり、各種リソースの Owner タグの値となります。
+
+### 06. Before deploy
+デプロイ前に下記のネーミングルールを確認ください。
+| serviceName | Environment | resouceGroupName |
+| ----------- | ----------- | ---------------- |
+| psg | dev | $ownerName.psg.dev |
+| psg | stg | $ownerName.psg.stg |
+| psg | prd | $ownerName.psg.prd |
+| sql | dev | $ownerName.sql.dev |
+| sql | stg | $ownerName.sql.stg |
+| sql | prd | $ownerName.sql.prd |
+
+デプロイ対象のテンプレートの内容を確認してください。<br>
+併せて、serviceName のディレクトリ配下にテンプレートとその概要を説明した README がありますので参照ください。
+| serviceName | detail |
+| ----------- | ------ |
+| psg         | CentOS8, PostgreSQL11, StorageAccount,...etc |
+| sql         | WindowsServer2019, SQLVm,SQL Database, StorageAccount,...etc |
+
+### 07. Deploy Command
+下記のスクリプトを実行してデプロイすることができます。
 ```
-PS > New-AzResourceGroupDeployment `
-  -Name ExampleDeployment `
-  -ResourceGroupName sample-rg01 `
-  -TemplateFile sample.json
+PS> .¥deployment.ps1
+
+Service    : sql psg      select: psg
+Environment: dev stg prd  select: dev
+
+Template File: /Users/atsushi/github/azure_arm_v1\psg\azuredeploy.json
+Parameter File: /Users/atsushi/github/azure_arm_v1\psg\dev.parameters.json
+
+Test the template "/Users/atsushi/github/azure_arm_v1\psg\azuredeploy.json" ? 
+yes or no :yes
+
+...
+...
+...
+
+Resource changes: 2 to create, 11 to modify, 10 no change, 1 to ignore.
+
+Deploy the template "/Users/atsushi/github/azure_arm_v1\psg\azuredeploy.json" ?
+yes or no : yes
 ```
 
-# 07. Get-AzResourceGroupDeployment
-デプロイ履歴を確認します。
-```
-PS > Get-AzResourceGroupDeployment `
-  -ResourceGroupName sample-rg01 
-```
-
-# 08. Get-AzResourceGroupDeploymentOperation
-デプロイ履歴の詳細を確認します。
-```
-Get-AzResourceGroupDeploymentOperation `
-  -ResourceGroupName sample-rg01 `
-  -DeploymentName ExampleDeployment-2
-```
+### 08. Check the deployment result.
+デプロイ完了後にログファイル「deployment.log」が生成されていますので、結果を確認ください。
 
 # 09. allow data access priv to vm01 for storage account "armtemplatedrive"
 vm01 に対して armtemplatedrive への "Storage Blob Data Contributor" 権限を付与します。
