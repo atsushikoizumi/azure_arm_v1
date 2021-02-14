@@ -81,7 +81,7 @@ $vmname = ”sql-dev-vm01”
 $vmInfo = Get-AzVM -ResourceGroupName $rgname -Name $vmname
 $strage = Get-AzStorageAccount -ResourceGroupName "atsushi.koizumi.data" -StorageAccountName "armtemplatedrive"
 New-AzRoleAssignment `
-  -ObjectId $vmInfoPs.Identity.PrincipalId `
+  -ObjectId $vmInfo.Identity.PrincipalId `
   -Scope $strage.id `
   -RoleDefinitionName "Storage Blob Data Contributor"
 ```
