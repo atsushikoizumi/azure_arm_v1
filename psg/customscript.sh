@@ -71,3 +71,14 @@ echo 'export NLS_LANG=Japanese_Japan.AL32UTF8' >> /home/${USERNAME}/.bash_profil
 curl https://packages.microsoft.com/config/rhel/8/prod.repo -o /etc/yum.repos.d/msprod.repo 
 ACCEPT_EULA=Y yum install -y mssql-tools                               >> $LOGFILE 2>&1
 echo 'export PATH=$PATH:/opt/mssql-tools/bin'  >> /home/${USERNAME}/.bash_profile
+
+### az cli
+rpm --import https://packages.microsoft.com/keys/microsoft.asc
+echo -e "[azure-cli]
+name=Azure CLI
+baseurl=https://packages.microsoft.com/yumrepos/azure-cli
+enabled=1
+gpgcheck=1
+gpgkey=https://packages.microsoft.com/keys/microsoft.asc" | tee /etc/yum.repos.d/azure-cli.repo
+yum install -y azure-cli                                               >> $LOGFILE 2>&1
+
