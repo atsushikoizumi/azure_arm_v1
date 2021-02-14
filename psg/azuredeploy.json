@@ -83,7 +83,7 @@
     },
     "storageAccounts": {
       "storage01": {
-        "name": "[concat(parameters('serviceName'),parameters('environmentName'),'storage01')]"
+        "name": "[concat(parameters('serviceName'),parameters('environmentName'),'st01',uniqueString(resourceGroup().name))]"
       }
     },
     "virtualMachines": {
@@ -92,6 +92,22 @@
         "computerName": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-vm01')]",
         "adminUsername": "[concat(parameters('serviceName'),parameters('environmentName'),'vm01','admin')]",
         "osDiskName": "[concat(parameters('serviceName'),'-',parameters('environmentName'),'-vm01-osDisk')]"
+      }
+    },
+    "dbForPostgreSQL": {
+      "pg01": {
+        "name": "[concat(parameters('serviceName'),parameters('environmentName'),'pg01-',uniqueString(resourceGroup().name))]",
+        "administratorLogin": "postgres"
+      }
+    },
+    "roleAssignments": {
+      "vm01storage01": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')]",
+        "name": "[guid(resourceId('Microsoft.Compute/virtualMachines',variables('virtualMachines').vm01.name),resourceId('Microsoft.Storage/storageAccounts',variables('storageAccounts').storage01.name))]"
+      },
+      "pg01storage01": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')]",
+        "name": "[guid(resourceId('Microsoft.DBforPostgreSQL/servers',variables('dbForPostgreSQL').pg01.name),resourceId('Microsoft.Storage/storageAccounts',variables('storageAccounts').storage01.name))]"
       }
     },
     // resourceID() は以下に全て記述する。
@@ -105,7 +121,8 @@
       "nsg01": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('networkSecurityGroups').sg01.name)]",
       "nic01": "[resourceId('Microsoft.Network/networkInterfaces',variables('networkInterfaces').nic01.name)]",
       "storage01": "[resourceId('Microsoft.Storage/storageAccounts',variables('storageAccounts').storage01.name)]",
-      "vm01": "[resourceId('Microsoft.Compute/virtualMachines',variables('virtualMachines').vm01.name)]"
+      "vm01": "[resourceId('Microsoft.Compute/virtualMachines',variables('virtualMachines').vm01.name)]",
+      "pg01": "[resourceId('Microsoft.DBforPostgreSQL/servers',variables('dbForPostgreSQL').pg01.name)]"
     }
   },
   "resources": [
@@ -133,6 +150,16 @@
               "networkSecurityGroup": {
                 "id": "[variables('resourceID').nsg01]"
               },
+              "serviceEndpoints": [
+                {
+                  "service": "Microsoft.Storage",
+                  "locations": ["[variables('location')]"]
+                },
+                {
+                  "service": "Microsoft.Sql",
+                  "locations": ["[variables('location')]"]
+                }
+              ],
               "privateEndpointNetworkPolicies": "Enabled",
               "privateLinkServiceNetworkPolicies": "Enabled"
             }
@@ -233,6 +260,77 @@
       }
     },
     {
+      "comments": "Storage Account",
+      "type": "Microsoft.Storage/storageAccounts",
+      "name": "[variables('storageAccounts').storage01.name]",
+      "apiVersion": "2019-06-01",
+      "location": "[variables('location')]",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "kind": "StorageV2",
+      "dependsOn": [
+        "[variables('resourceID').vnet01]"
+      ],
+      "tags": "[variables('tags')]",
+      "properties": {
+        "allowBlobPublicAccess": false,
+        "supportsHttpsTrafficOnly": true,
+        "accessTier": "Hot",
+        "networkAcls": {
+          "defaultAction": "Deny",
+          // Add permissions to the server Identity to the storage account.
+          "bypass": "AzureServices",
+          "virtualNetworkRules": [
+            {
+              "id": "[variables('resourceID').subnet01]",
+              "action": "Allow"
+            }
+          ],
+          "ipRules": [
+            {
+              "value": "[parameters('myMobileIpAddress')]",
+              "action": "Allow"
+            }
+          ]
+        }
+      },
+      "resources": [
+        {
+          "type": "Microsoft.Storage/storageAccounts/providers/roleAssignments",
+          "apiVersion": "2020-03-01-preview",
+          "tags": "[variables('tags')]",
+          "name": "[concat(variables('storageAccounts').storage01.name, '/Microsoft.Authorization/', variables('roleAssignments').vm01storage01.name)]",
+          "dependsOn": [
+            "[variables('resourceID').vm01]",
+            "[variables('resourceID').storage01]"
+          ],
+          "properties": {
+            "roleDefinitionId": "[variables('roleAssignments').vm01storage01.roleDefinitionId]",
+            "principalId": "[reference(resourceId('Microsoft.Compute/virtualMachines',variables('virtualMachines').vm01.name), '2019-07-01', 'Full').identity.principalId]",
+            "scope": "[variables('resourceID').storage01]",
+            "principalType": "ServicePrincipal"
+          }
+        },
+        {
+          "type": "Microsoft.Storage/storageAccounts/providers/roleAssignments",
+          "apiVersion": "2020-03-01-preview",
+          "tags": "[variables('tags')]",
+          "name": "[concat(variables('storageAccounts').storage01.name, '/Microsoft.Authorization/', variables('roleAssignments').pg01storage01.name)]",
+          "dependsOn": [
+            "[variables('resourceID').pg01]",
+            "[variables('resourceID').storage01]"
+          ],
+          "properties": {
+            "roleDefinitionId": "[variables('roleAssignments').pg01storage01.roleDefinitionId]",
+            "principalId": "[reference(variables('resourceID').pg01, '2017-12-01', 'Full').identity.principalId]",
+            "scope": "[variables('resourceID').storage01]",
+            "principalType": "ServicePrincipal"
+          }
+        }
+      ]
+    },
+    {
       "comments": "Virtual Machine",
       "name": "[variables('virtualMachines').vm01.name]",
       "type": "Microsoft.Compute/virtualMachines",
@@ -241,6 +339,9 @@
       "dependsOn": [
         "[variables('resourceID').nic01]"
       ],
+      "identity": {
+        "type": "SystemAssigned"
+      },
       "tags": "[variables('tags')]",
       "properties": {
         "osProfile": {
@@ -330,6 +431,7 @@
         "networkProfile": {
           "networkInterfaces": [
             {
+              // The ECDSA host key for psg-dev-vm01-dgyf3zeehekww.eastus.cloudapp.azure.com has changed
               // ssh-keygen -R dba-stg-vm01-b2aswtpvua6go.eastus.cloudapp.azure.com
               "properties": {
                 "primary": true
@@ -365,6 +467,193 @@
               // https://docs.microsoft.com/en-us/azure/virtual-machines/extensions/custom-script-linux
               "commandToExecute": "[concat('bash customscript.sh ',variables('virtualMachines').vm01.adminUsername)]"
             }
+          }
+        }
+      ]
+    },
+    {
+      // PostgreSQL on Windows Server
+      "type": "Microsoft.DBforPostgreSQL/servers",
+      "name": "[variables('dbForPostgreSQL').pg01.name]",
+      "apiVersion": "2017-12-01",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "sku": {
+        // Install-Module Az.PostgreSql
+        // Get-AzPostgreSqlFlexibleServerLocationBasedCapability -Location eastus
+        "name": "GP_Gen5_2",
+        "tier": "GeneralPurpose",
+        "capacity": 2,
+        "family": "Gen5"
+      },
+      "properties": {
+        "version": "11",
+        "sslEnforcement": "Enabled",
+        "minimalTlsVersion": "TLS1_2",
+        "infrastructureEncryption": "Disabled",
+        "publicNetworkAccess": "Enabled",
+        "storageProfile": {
+          "backupRetentionDays": 7,
+          "geoRedundantBackup": "Disabled",
+          "storageMB": 102400,
+          "storageAutogrow": "Enabled"
+        },
+        "createMode": "Default",
+        "administratorLogin": "[variables('dbForPostgreSQL').pg01.administratorLogin]",
+        "administratorLoginPassword": "[parameters('adminPassword')]"
+      },
+      "location": "[variables('location')]",
+      "tags": "[variables('tags')]",
+      // ログ
+      // https://docs.microsoft.com/ja-jp/azure/postgresql/concepts-server-logs
+      // https://docs.microsoft.com/ja-jp/azure/postgresql/concepts-audit
+      "resources": [
+        {
+          "name": "[concat(variables('dbForPostgreSQL').pg01.name,'/virtualNetworkRules01')]",
+          "type": "Microsoft.DBforPostgreSQL/servers/virtualNetworkRules",
+          "apiVersion": "2017-12-01",
+          "properties": {
+            "virtualNetworkSubnetId": "[variables('resourceID').subnet01]",
+            "ignoreMissingVnetServiceEndpoint": false
+          },
+          "dependsOn": [
+            "[variables('resourceID').pg01]"
+          ]
+        },
+        {
+          "name": "[concat(variables('dbForPostgreSQL').pg01.name,'/microsoft.insights/diagnosticSettings01')]",
+          "type": "Microsoft.DBforPostgreSQL/servers/providers/diagnosticSettings",
+          "apiVersion": "2017-05-01-preview",
+          //"location": "[variables('location')]",
+          "dependsOn": [
+            "[variables('resourceID').pg01]",
+            "[variables('resourceID').storage01]"
+          ],
+          "properties": {
+            "storageAccountId": "[variables('resourceID').storage01]",
+            "metrics": [
+              {
+                "category": "AllMetrics",
+                "enabled": true,
+                "retentionPolicy": {
+                  "enabled": true,
+                  "days": 35
+                }
+              }
+            ],
+            "logs": [
+              {
+                // https://docs.microsoft.com/ja-jp/azure/postgresql/concepts-audit
+                // pgAudit is in preview on Azure Database for PostgreSQL. The extension can be enabled on General Purpose and Memory Optimized servers only.
+                "category": "PostgreSQLLogs",
+                "enabled": true,
+                "retentionPolicy": {
+                  "enabled": true,
+                  "days": 35
+                }
+              },
+              {
+                "category": "QueryStoreRuntimeStatistics",
+                "enabled": true,
+                "retentionPolicy": {
+                  "enabled": true,
+                  "days": 35
+                }
+              },
+              {
+                "category": "QueryStoreWaitStatistics",
+                "enabled": true,
+                "retentionPolicy": {
+                  "enabled": true,
+                  "days": 35
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "db01",
+          "type": "databases",
+          "apiVersion": "2017-12-01",
+          "properties": {
+            "charset": "utf8",
+            "collation": "Japanese_Japan.932"
+          },
+          "dependsOn": [
+            "[variables('resourceID').pg01]"
+          ]
+        },
+        {
+          "type": "configurations",
+          "apiVersion": "2017-12-01",
+          "name": "shared_preload_libraries",
+          "dependsOn": [
+            "[variables('resourceID').pg01]"
+          ],
+          "properties": {
+            "value": "pgaudit",
+            "source": "user-override"
+          }
+        },
+        {
+          "type": "configurations",
+          "apiVersion": "2017-12-01",
+          "name": "timezone",
+          "dependsOn": [
+            "[variables('resourceID').pg01]"
+          ],
+          "properties": {
+            "value": "Asia/Tokyo",
+            "source": "user-override"
+          }
+        },
+        {
+          "type": "configurations",
+          "apiVersion": "2017-12-01",
+          "name": "log_lock_waits",
+          "dependsOn": [
+            "[variables('resourceID').pg01]"
+          ],
+          "properties": {
+            "value": "ON",
+            "source": "user-override"
+          }
+        },
+        {
+          "type": "configurations",
+          "apiVersion": "2017-12-01",
+          "name": "log_disconnections",
+          "dependsOn": [
+            "[variables('resourceID').pg01]"
+          ],
+          "properties": {
+            "value": "on",
+            "source": "user-override"
+          }
+        },
+        {
+          "type": "configurations",
+          "apiVersion": "2017-12-01",
+          "name": "deadlock_timeout",
+          "dependsOn": [
+            "[variables('resourceID').pg01]"
+          ],
+          "properties": {
+            "value": "60000",
+            "source": "user-override"
+          }
+        },
+        {
+          "type": "configurations",
+          "apiVersion": "2017-12-01",
+          "name": "log_min_duration_statement",
+          "dependsOn": [
+            "[variables('resourceID').pg01]"
+          ],
+          "properties": {
+            "value": "600000",
+            "source": "user-override"
           }
         }
       ]
