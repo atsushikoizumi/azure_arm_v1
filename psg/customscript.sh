@@ -57,7 +57,10 @@ yum install -y mysql                                                   >> $LOGFI
 yum install -y mysql-server                                            >> $LOGFILE 2>&1
 
 ### psql
-yum install -y postgresql postgresql-server                            >> $LOGFILE 2>&1
+#yum install -y postgresql postgresql-server                            >> $LOGFILE 2>&1
+yum -y install https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm  >> $LOGFILE 2>&1
+dnf -qy module disable postgresql                                      >> $LOGFILE 2>&1
+dnf -y install postgresql12 postgresql12-server                        >> $LOGFILE 2>&1
 
 ### sqlplus
 mkdir /opt/oracle                                                      >> $LOGFILE 2>&1
