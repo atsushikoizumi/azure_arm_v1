@@ -1,8 +1,9 @@
 ## Azure Infrastructure as Code
-ARM Templete を使った Azure resource の deploy 方法を確認します。
+PowerShell を使った Azure resource の deploy 方法を確認します。<br>
 
 
-### 01. install powershell for mac
+
+### 01. インストール
 以下のコマンドで Mac に PowerShell をインストールできます。
 ```
 $ brew install openssl
@@ -11,7 +12,7 @@ $ brew install --cask powershell
 $ brew upgrade powershell --cask
 ```
 
-### 02. Set PSRepository
+### 02. レポジトリ "PSGallery" の登録
 レポジトリを登録します。
 ```
 PS > Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
@@ -22,19 +23,19 @@ Name                      InstallationPolicy   SourceLocation
 PSGallery                 Untrusted            https://www.powershellgallery.com/api/v2
 ```
 
-### 03. Install Az Modules
+### 03. Az Module をインストール
 Azure を操作するための Module をインストールします。
 ```
 PS > Install-Module -Name Az -Scope CurrentUser
 ```
 
-### 04. login
+### 04. ログイン
 Azure にログインします。
 ```
 PS > Connect-AzAccount
 ```
 
-### 05. Set ownerName
+### 05. サービス名を定義
 全てのリソース名を決定する環境変数を定義します。<br>
 [deployment.ps1]の以下の項目を編集してください。
 ```
@@ -43,7 +44,7 @@ $ownerName         = "atsushi.koizumi"
 
 この "$ownerName" は、リソースグループ名の prefix となり、各種リソースの Owner タグの値となります。
 
-### 06. Before deploy
+### 06. デプロイ前の確認事項
 デプロイ前に下記のネーミングルールを確認ください。
 | serviceName | Environment | resouceGroupName |
 | ----------- | ----------- | ---------------- |
@@ -54,24 +55,27 @@ $ownerName         = "atsushi.koizumi"
 | sql | stg | $ownerName.sql.stg |
 | sql | prd | $ownerName.sql.prd |
 
-デプロイ対象のテンプレートの内容を確認してください。<br>
 併せて、serviceName のディレクトリ配下にテンプレートとその概要を説明した README がありますので参照ください。
 | serviceName | detail |
 | ----------- | ------ |
 | psg         | CentOS8, PostgreSQL11, StorageAccount,...etc |
 | sql         | WindowsServer2019, SQLVm,SQL Database, StorageAccount,...etc |
 
-### 07. Deploy Command
+### 07. デプロイ用スクリプト実行
 下記のスクリプトを実行してデプロイすることができます。
 ```
 PS> .¥deployment.ps1
 
+01. 最初に Service と Environment を選択します。
 Service    : sql psg      select: psg
 Environment: dev stg prd  select: dev
 
+上記で選択した内容に応じてテンプレートファイルとパラメータファイルが選択されます。
+このとき、対象の存在しない場合、エラーとなりスクリプトは終了します。
 Template File: /Users/atsushi/github/azure_arm_v1\psg\azuredeploy.json
 Parameter File: /Users/atsushi/github/azure_arm_v1\psg\dev.parameters.json
 
+02. テンプレートのテストを実施します。no を選択するとスクリプトは終了します。
 Test the template "/Users/atsushi/github/azure_arm_v1\psg\azuredeploy.json" ? 
 yes or no :yes
 
@@ -81,9 +85,12 @@ yes or no :yes
 
 Resource changes: 2 to create, 11 to modify, 10 no change, 1 to ignore.
 
+03. テンプレートのテスト結果が問題なければ、デプロイを実行します。
 Deploy the template "/Users/atsushi/github/azure_arm_v1\psg\azuredeploy.json" ?
 yes or no : yes
 ```
+
+デプロイは以上です。
 
 ### 08. Check the deployment result.
 デプロイ完了後にログファイル「deployment.log」が生成されていますので、結果を確認ください。
