@@ -504,7 +504,7 @@
         "name": "StandardSSD_LRS"
       }
     },
-    {
+    /*{
       "type": "Microsoft.Compute/disks",
       "apiVersion": "2019-07-01",
       "name": "[variables('virtualMachines').vm01.dataDiskName02]",
@@ -547,7 +547,7 @@
       "sku": {
         "name": "StandardSSD_LRS"
       }
-    },
+    },*/
     {
       "comments": "Virtual Machine",
       "name": "[variables('virtualMachines').vm01.name]",
@@ -556,9 +556,9 @@
       "location": "[variables('location')]",
       "dependsOn": [
         "[variables('resourceID').nic01]",
-        "[variables('resourceID').vm01dataDisk01]",
+        "[variables('resourceID').vm01dataDisk01]"/*,
         "[variables('resourceID').vm01dataDisk02]",
-        "[variables('resourceID').vm01dataDisk03]"
+        "[variables('resourceID').vm01dataDisk03]"*/
       ],
       "identity": {
         "type": "SystemAssigned"
@@ -607,7 +607,7 @@
               },
               "createOption": "Attach",
               "caching": "ReadWrite"
-            },
+            }/*,
             {
               "lun": 1,
               "name": "[variables('virtualMachines').vm01.dataDiskName02]",
@@ -625,7 +625,7 @@
               },
               "createOption": "Attach",
               "caching": "ReadWrite"
-            }
+            }*/
           ]
         },
         "networkProfile": {
@@ -731,16 +731,16 @@
           },
           "sqlLogSettings": {
             "luns": [
-              1
+              0
             ],
-            "defaultFilePath": "L:\\MSsql\\Logs"
+            "defaultFilePath": "F:\\MSsql\\Logs"
           },
-          "sqlTempDbSettings": {
+          /*"sqlTempDbSettings": {
             "luns": [
               2
             ],
             "defaultFilePath": "T:\\MSsql\\TempDB"
-          },
+          },*/
           "diskConfigurationType": "NEW",
           "storageWorkloadType": "GENERAL"
         }
