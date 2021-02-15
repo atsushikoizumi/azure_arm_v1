@@ -1,7 +1,5 @@
 ## Azure Infrastructure as Code
-PowerShell を使った Azure resource の deploy 方法を確認します。<br>
-
-
+PowerShell スクリプト「deployment.ps1」により Azure resource をデプロイします。
 
 ### 01. インストール
 以下のコマンドで Mac に PowerShell をインストールできます。
@@ -37,8 +35,9 @@ PS > Connect-AzAccount
 
 ### 05. サービス名を定義
 全てのリソース名を決定する環境変数を定義します。<br>
-[deployment.ps1]の以下の項目を編集してください。
+「deployment.ps1」の以下の項目を編集してください。
 ```
+[deployment.ps1]
 $ownerName         = "atsushi.koizumi"
 ```
 
@@ -66,16 +65,16 @@ $ownerName         = "atsushi.koizumi"
 ```
 PS> .¥deployment.ps1
 
-01. 最初に Service と Environment を選択します。
+[1] 最初に Service と Environment を選択します。
 Service    : sql psg      select: psg
 Environment: dev stg prd  select: dev
 
-上記で選択した内容に応じてテンプレートファイルとパラメータファイルが選択されます。
-このとき、対象の存在しない場合、エラーとなりスクリプトは終了します。
+# 上記で選択した内容に応じてテンプレートファイルとパラメータファイルが選択されます。
+# 対象のファイルが存在しない場合、スクリプトは終了します。
 Template File: /Users/atsushi/github/azure_arm_v1\psg\azuredeploy.json
 Parameter File: /Users/atsushi/github/azure_arm_v1\psg\dev.parameters.json
 
-02. テンプレートのテストを実施します。no を選択するとスクリプトは終了します。
+[2] テンプレートのテストを実施します。no を選択するとスクリプトは終了します。
 Test the template "/Users/atsushi/github/azure_arm_v1\psg\azuredeploy.json" ? 
 yes or no :yes
 
@@ -85,15 +84,13 @@ yes or no :yes
 
 Resource changes: 2 to create, 11 to modify, 10 no change, 1 to ignore.
 
-03. テンプレートのテスト結果が問題なければ、デプロイを実行します。
+[3] テンプレートのテスト結果が問題なければ、デプロイを実行します。
 Deploy the template "/Users/atsushi/github/azure_arm_v1\psg\azuredeploy.json" ?
 yes or no : yes
 ```
 
-デプロイは以上です。
-
-### 08. Check the deployment result.
-デプロイ完了後にログファイル「deployment.log」が生成されていますので、結果を確認ください。
+### 08. デプロイ結果の確認
+デプロイスクリプト実行後にログファイル「deployment.log」が生成されていますので、結果を確認ください。
 
 # 09. allow data access priv to vm01 for storage account "armtemplatedrive"
 vm01 に対して armtemplatedrive への "Storage Blob Data Contributor" 権限を付与します。
