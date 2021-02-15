@@ -83,7 +83,10 @@
     },
     "storageAccounts": {
       "storage01": {
-        "name": "[concat(parameters('serviceName'),parameters('environmentName'),'st01',uniqueString(resourceGroup().name))]"
+        "name": "[concat('pg01log',uniqueString(resourceGroup().name))]"
+      },
+      "storage02": {
+        "name": "[concat('data01',uniqueString(resourceGroup().name))]"
       }
     },
     "virtualMachines": {
@@ -108,6 +111,14 @@
       "pg01storage01": {
         "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')]",
         "name": "[guid(resourceId('Microsoft.DBforPostgreSQL/servers',variables('dbForPostgreSQL').pg01.name),resourceId('Microsoft.Storage/storageAccounts',variables('storageAccounts').storage01.name))]"
+      },
+      "vm01storage02": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')]",
+        "name": "[guid(resourceId('Microsoft.Compute/virtualMachines',variables('virtualMachines').vm01.name),resourceId('Microsoft.Storage/storageAccounts',variables('storageAccounts').storage02.name))]"
+      },
+      "pg01storage02": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')]",
+        "name": "[guid(resourceId('Microsoft.DBforPostgreSQL/servers',variables('dbForPostgreSQL').pg01.name),resourceId('Microsoft.Storage/storageAccounts',variables('storageAccounts').storage02.name))]"
       }
     },
     // resourceID() は以下に全て記述する。
@@ -121,6 +132,7 @@
       "nsg01": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('networkSecurityGroups').sg01.name)]",
       "nic01": "[resourceId('Microsoft.Network/networkInterfaces',variables('networkInterfaces').nic01.name)]",
       "storage01": "[resourceId('Microsoft.Storage/storageAccounts',variables('storageAccounts').storage01.name)]",
+      "storage02": "[resourceId('Microsoft.Storage/storageAccounts',variables('storageAccounts').storage02.name)]",
       "vm01": "[resourceId('Microsoft.Compute/virtualMachines',variables('virtualMachines').vm01.name)]",
       "pg01": "[resourceId('Microsoft.DBforPostgreSQL/servers',variables('dbForPostgreSQL').pg01.name)]"
     }
@@ -325,6 +337,77 @@
             "roleDefinitionId": "[variables('roleAssignments').pg01storage01.roleDefinitionId]",
             "principalId": "[reference(variables('resourceID').pg01, '2017-12-01', 'Full').identity.principalId]",
             "scope": "[variables('resourceID').storage01]",
+            "principalType": "ServicePrincipal"
+          }
+        }
+      ]
+    },
+    {
+      "comments": "Storage Account",
+      "type": "Microsoft.Storage/storageAccounts",
+      "name": "[variables('storageAccounts').storage02.name]",
+      "apiVersion": "2019-06-01",
+      "location": "[variables('location')]",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "kind": "StorageV2",
+      "dependsOn": [
+        "[variables('resourceID').vnet01]"
+      ],
+      "tags": "[variables('tags')]",
+      "properties": {
+        "allowBlobPublicAccess": false,
+        "supportsHttpsTrafficOnly": true,
+        "accessTier": "Hot",
+        "networkAcls": {
+          "defaultAction": "Deny",
+          // Add permissions to the server Identity to the storage account.
+          "bypass": "AzureServices",
+          "virtualNetworkRules": [
+            {
+              "id": "[variables('resourceID').subnet01]",
+              "action": "Allow"
+            }
+          ],
+          "ipRules": [
+            {
+              "value": "[parameters('myMobileIpAddress')]",
+              "action": "Allow"
+            }
+          ]
+        }
+      },
+      "resources": [
+        {
+          "type": "Microsoft.Storage/storageAccounts/providers/roleAssignments",
+          "apiVersion": "2020-03-01-preview",
+          "tags": "[variables('tags')]",
+          "name": "[concat(variables('storageAccounts').storage02.name, '/Microsoft.Authorization/', variables('roleAssignments').vm01storage02.name)]",
+          "dependsOn": [
+            "[variables('resourceID').vm01]",
+            "[variables('resourceID').storage02]"
+          ],
+          "properties": {
+            "roleDefinitionId": "[variables('roleAssignments').vm01storage02.roleDefinitionId]",
+            "principalId": "[reference(resourceId('Microsoft.Compute/virtualMachines',variables('virtualMachines').vm01.name), '2019-07-01', 'Full').identity.principalId]",
+            "scope": "[variables('resourceID').storage02]",
+            "principalType": "ServicePrincipal"
+          }
+        },
+        {
+          "type": "Microsoft.Storage/storageAccounts/providers/roleAssignments",
+          "apiVersion": "2020-03-01-preview",
+          "tags": "[variables('tags')]",
+          "name": "[concat(variables('storageAccounts').storage02.name, '/Microsoft.Authorization/', variables('roleAssignments').pg01storage02.name)]",
+          "dependsOn": [
+            "[variables('resourceID').pg01]",
+            "[variables('resourceID').storage02]"
+          ],
+          "properties": {
+            "roleDefinitionId": "[variables('roleAssignments').pg01storage02.roleDefinitionId]",
+            "principalId": "[reference(variables('resourceID').pg01, '2017-12-01', 'Full').identity.principalId]",
+            "scope": "[variables('resourceID').storage02]",
             "principalType": "ServicePrincipal"
           }
         }
