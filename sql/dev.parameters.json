@@ -19,6 +19,14 @@
         "secretName": "mymobileip"
       }
     },
+    "myCompanyIpAddress": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/71e0001a-0944-4a79-a3ec-5db6b44ab936/resourceGroups/atsushi.koizumi.data/providers/Microsoft.KeyVault/vaults/armtemplatekey"
+        },
+        "secretName": "companyip"
+      }
+    },
     "adminPassword": {
       "reference": {
         "keyVault": {
@@ -31,7 +39,7 @@
       "value": false
     },
     "sqlDatabase02Flag":{
-      "value": false
+      "value": true
     },
     "sqlDatabase03Flag":{
       "value": false
